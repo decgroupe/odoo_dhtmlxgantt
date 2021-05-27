@@ -6,14 +6,22 @@
         <!-- <button class="btn btn-primary">Click Me</button> -->
         <div class="o_dhx_gantt_root">
             <div class="o_dhx_gantt_header">
-                <div class="">
-                    <button type="button" class="btn btn-secondary o_dhx_critical_path o_dhx_button">Show Critical Path</button>
-                    <button type="button" class="btn btn-secondary o_dhx_reschedule o_dhx_button">Reschedule</button>
-                    <button type="button" class="btn btn-secondary o_dhx_zoom_out o_dhx_button_right">Zoom Out</button>
-                    <button type="button" class="btn btn-secondary o_dhx_zoom_in o_dhx_button_right">Zoom In</button>
+                <div class="o_dhx_gantt_buttons">
+
+                    <div class="btn-group btn-sm">
+                        <button type="button" class="btn btn-secondary o_dhx_critical_path o_dhx_button">Show Critical Path</button>
+                        <button type="button" class="btn btn-secondary o_dhx_reschedule o_dhx_button">Reschedule</button>
+                    </div>
+
+                    <div class="btn-group btn-sm o_dhx_button_right">
+                        <button type="button" class="btn btn-secondary o_dhx_zoom_out ">Zoom Out</button>
+                        <button type="button" class="btn btn-secondary o_dhx_zoom_in">Zoom In</button>
+                    </div>
+
                 </div>
             </div>
             <div class="o_dhx_gantt">
+                <!-- Container for gantt rendering -->
             </div>
         </div>
     </t>

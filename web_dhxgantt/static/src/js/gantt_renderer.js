@@ -167,6 +167,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         renderGantt: function () {
             // console.log('renderGantt');
             gantt.init(this.$('.o_dhx_gantt').get(0));
+            gantt.plugins({
+                marker: true
+            });
             this.trigger_up('gantt_config');
             this.trigger_up('gantt_create_dp');
             if (!this.events_set) {
