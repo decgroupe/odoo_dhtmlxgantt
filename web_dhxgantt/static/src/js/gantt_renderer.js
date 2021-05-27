@@ -165,8 +165,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // console.log(this.$el);
         },
         renderGantt: function () {
-            // console.log('renderGantt');
-            gantt.init(this.$('.o_dhx_gantt').get(0));
+            var gantt_container = this.$('.o_dhx_gantt').get(0)
             gantt.plugins({
                 marker: true
             });
@@ -193,6 +192,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             var rootHeight = this.$el.height();
             var headerHeight = this.$('.o_dhx_gantt_header').height();
             this.$('.o_dhx_gantt').height(rootHeight - headerHeight);
+
+            gantt.init(gantt_container);
             gantt.parse(this.state.records);
         },
         _onUpdate: function () {

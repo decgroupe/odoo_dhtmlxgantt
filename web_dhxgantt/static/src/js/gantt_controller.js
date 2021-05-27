@@ -1,6 +1,6 @@
 odoo.define('web_dhxgantt.GanttController', function (require) {
     "use strict";
-    
+
     var AbstractController = require('web.AbstractController');
     var core = require('web.core');
     var dialogs = require('web.view_dialogs');
@@ -41,46 +41,42 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 // const service = services[entity];
                 switch (action) {
                     case "update":
-                        // return self.trigger_up('gantt_data_updated', {entity, data});
-                        switch (entity) {
-                            case "task":
-                                var res_deferred = $.Deferred();
-                                self.model.updateTask(data).then(function (res) {
-                                    res_deferred.resolve(res.result);
-                                    self.update({});
-                                }, function (res) {
-                                    res_deferred.resolve({ state: "error" });
-                                    gantt.deleteLink(data.id);
-                                });
-                                return res_deferred;
-                                break;
-                        }
-                        // return service.update(data);
-                        break;
+                        return new gantt.Promise(function (resolve, reject) {
+                            switch (entity) {
+                                case "task":
+                                    self.model.updateTask(data).then(function (res) {
+                                        resolve(res.result);
+                                        self.update({});
+                                    }, function (res) {
+                                        resolve({ state: "error" });
+                                        gantt.deleteLink(data.id);
+                                    });
+                                    break;
+                            }
+                        });
                     case "create":
-                        switch (entity) {
-                            case "link":
-                                var res_deferred = $.Deferred();
-                                self.model.createLink(data).then(function (res) {
-                                    // set res.id as the id returned from the server to update client id :)
-                                    res.id = res[0];
-                                    res_deferred.resolve(res);
-                                }, function (res) {
-                                    // console.log('create link failed');
-                                    // console.log(res);
-                                    res_deferred.resolve({ state: "error" });
-                                    gantt.deleteLink(data.id);
-                                });
-                                return res_deferred;
-                                break;
-                        }
-                        break;
+                        return new gantt.Promise(function (resolve, reject) {
+                            switch (entity) {
+                                case "link":
+                                    self.model.createLink(data).then(function (res) {
+                                        // set res.id as the id returned from the server to update client id :)
+                                        res.id = res[0];
+                                        resolve(res);
+                                    }, function (res) {
+                                        resolve({ state: "error" });
+                                        gantt.deleteLink(data.id);
+                                    });
+                                    break;
+                            }
+                        });
                     case "delete":
-                        switch (entity) {
-                            case "link":
-                                return self.model.deleteLink(data);
-                        }
-                        break;
+                        return new gantt.Promise(function (resolve, reject) {
+                            switch (entity) {
+                                case "link":
+                                    return self.model.deleteLink(data);
+                                    break;
+                            }
+                        });
                 }
             });
             dp.attachEvent("onAfterUpdate", function (id, action, tid, response) {
