@@ -19,14 +19,13 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.modelName = params.modelName;
             this.fieldNames = params.fieldNames;
 
-            this.map_id = params.id_field;
+            this.map_identifier = params.identifier;
             this.map_text = params.text;
             this.map_date_start = params.date_start;
             this.map_duration = params.duration;
             this.map_progress = params.progress;
             this.map_open = params.open;
             this.map_links_serialized_json = params.links_serialized_json;
-            this.map_total_float = params.total_float;
             this.map_parent = params.parent;
             this.linkModel = params.linkModel;
             return this._load(params);
@@ -45,7 +44,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 fields: this.fieldNames,
                 domain: self.domain,
                 orderBy: [{
-                    name: self.map_date_start,
+                    name: self.map_id,
                     asc: true,
                 }]
             })
@@ -98,7 +97,6 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 task.progress = record[self.map_progress] / 100.0;
                 task.open = record[self.map_open];
                 task.links_serialized_json = record[self.map_links_serialized_json];
-                task.total_float = record[self.map_total_float];
 
                 data.push(task);
                 links.push.apply(links, JSON.parse(record.links_serialized_json))
@@ -110,12 +108,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             if (data.isProject) {
                 return $.when();
             }
-            // console.log('updateTask');
-            // console.log({data});
-            var args = [];
             var values = {};
-
-            var id = data.id;
             values[this.map_text] = data.text;
             values[this.map_duration] = data.duration;
             values[this.map_open] = data.open;
@@ -124,16 +117,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             var formatFunc = gantt.date.str_to_date("%d-%m-%Y %h:%i");
             var date_start = formatFunc(data.start_date);
             values[this.map_date_start] = JSON.stringify(date_start);
-            // console.log('time');
-            // console.log(time.datetime_to_str(new Date("2019-09-07T20:00:00.000Z")));
-            args.push(id);
-            args.push(values)
-            // console.log({values});
-            // console.log({args});
+
             return this._rpc({
                 model: this.modelName,
                 method: 'write',
-                args: args,
+                args: [data.id, values],
             });
         },
         createLink: function (data) {

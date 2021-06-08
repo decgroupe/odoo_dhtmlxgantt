@@ -8,7 +8,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
 
     var GanttController = AbstractController.extend({
         custom_events: _.extend({}, AbstractController.prototype.custom_events, {
-            // gantt_data_updated: '_onGanttUpdated',
+            gantt_data_updated: '_onGanttUpdated',
             gantt_create_dp: '_onGanttCreateDataProcessor',
             gantt_config: '_onGanttConfig',
             gantt_show_critical_path: '_onShowCriticalPath',
@@ -46,7 +46,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                                 case "task":
                                     self.model.updateTask(data).then(function (res) {
                                         resolve(res.result);
-                                        self.update({});
+                                        // Do not update to avoid a task "jump" effect: self.update({});
                                     }, function (res) {
                                         resolve({ state: "error" });
                                         gantt.deleteLink(data.id);
@@ -88,34 +88,24 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 }
             });
             dp.attachEvent("onBeforeUpdate", function (id, state, data) {
-                // console.log('BeforeUpdate. YAY!');
                 data.csrf_token = core.csrf_token;
                 data.model_name = self.modelName;
                 data.timezone_offset = (-self.date_object.getTimezoneOffset());
                 data.map_text = self.map_text;
                 data.map_text = self.map_text;
-                data.map_id_field = self.map_id_field;
+                data.map_identifier = self.map_identifier;
                 data.map_date_start = self.map_date_start;
                 data.map_duration = self.map_duration;
                 data.map_open = self.map_open;
                 data.map_progress = self.map_progress;
                 data.link_model = self.link_model;
-                // console.log('data are ');
-                // console.log(data);
                 return true;
             });
         },
-        // _onGanttUpdated: function(event){
-        //     event.stopPropagation();
-        //     console.log('_onGanttUpdated');
-        //     console.log(event.data.entity);
-        //     console.log(event.data.data);
-        //     switch(event.data.entity){
-        //         case "task":
-        //             return this.model.updateTask(event.data.data);
-        //         case "link":
-        //     }
-        // }
+        _onGanttUpdated: function(event){
+            event.stopPropagation();
+            console.log('_onGanttUpdated');
+        },
         _onGanttConfig: function () {
             var self = this;
             if (this.gantt_configured) {

@@ -8,7 +8,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
     var GanttRenderer = AbstractRenderer.extend({
         template: "web_dhxgantt.gantt_view",
-        ganttApiUrl: "/gantt_api",
         date_object: new Date(),
         events: _.extend({}, AbstractRenderer.prototype.events, {
             'click button.o_dhx_critical_path': '_onClickCriticalPath',
@@ -25,14 +24,13 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this.initDomain = params.initDomain;
             this.modelName = params.modelName;
             this.map_text = params.map_text;
-            this.map_id_field = params.map_id_field;
+            this.map_identifier = params.map_identifier;
             this.map_date_start = params.map_date_start;
             this.map_duration = params.map_duration;
             this.map_open = params.map_open;
             this.map_progress = params.map_progress;
             this.map_links_serialized_json = params.map_links_serialized_json;
             this.link_model = params.link_model;
-            this.is_total_float = params.is_total_float;
 
             // TODO: make this read from some database variable
             gantt.templates.scale_cell_class = function (date) {
@@ -47,12 +45,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.config.columns = [
                 { name: "text", tree: true, resize: true },
                 { name: "start_date", align: "center", resize: true },
-                { name: "duration", align: "center" },
-                // {name: "add", width: 44, min_width: 44, max_width: 44}
+                { name: "duration", align: "right" },
             ]
-            if (this.is_total_float) {
-                gantt.config.columns.push({ name: "total_float", label: "Total Float", align: "center" })
-            }
 
             // gantt.ignore_time = function (date) {
             //     return !gantt.isWorkTime(date, "day");

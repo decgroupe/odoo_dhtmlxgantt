@@ -7,14 +7,13 @@
         <field name="type">dhxgantt</field>
         <field name="arch" type="xml">
             <dhxgantt
-                id_field="id"
+                identifier="id"
                 parent="project_id"
                 text="name"
                 date_start="date_start"
                 duration="planned_duration"
                 progress="progress"
                 open="open"
-                total_float="total_float"
                 links_serialized_json="links_serialized_json"
                 link_model="project.depending.tasks"
             />
