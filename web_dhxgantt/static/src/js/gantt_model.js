@@ -16,6 +16,9 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return res;
         },
         load: function (params) {
+            this.modelName = params.modelName;
+            this.fieldNames = params.fieldNames;
+
             this.map_id = params.id_field;
             this.map_text = params.text;
             this.map_date_start = params.date_start;
@@ -24,8 +27,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.map_open = params.open;
             this.map_links_serialized_json = params.links_serialized_json;
             this.map_total_float = params.total_float;
-            this.map_parent = 'project_id';
-            this.modelName = params.modelName;
+            this.map_parent = params.parent;
             this.linkModel = params.linkModel;
             return this._load(params);
         },
@@ -33,22 +35,17 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return this._load(params);
         },
         _load: function (params) {
+            var self = this;
             params = params ? params : {};
             this.domain = params.domain || this.domain || [];
             this.modelName = params.modelName || this.modelName;
-            var self = this;
-            var fieldNames = [this.map_text, this.map_date_start, this.map_duration];
-            this.map_open && fieldNames.push(this.map_open);
-            this.map_links_serialized_json && fieldNames.push(this.map_links_serialized_json);
-            this.map_total_float && fieldNames.push(this.map_total_float);
-            this.map_parent && fieldNames.push(this.map_parent);
             return this._rpc({
-                model: this.modelName,
+                model: self.modelName,
                 method: 'search_read',
-                fields: fieldNames,
-                domain: this.domain,
+                fields: this.fieldNames,
+                domain: self.domain,
                 orderBy: [{
-                    name: this.map_date_start,
+                    name: self.map_date_start,
                     asc: true,
                 }]
             })
@@ -76,29 +73,29 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
                 var task = {};
                 if (self.map_parent) {
-                    var projectFound = data.find(function (element) {
+                    var project = data.find(function (element) {
                         return element.isProject && element.serverId == record[self.map_parent][0];
                     });
-                    if (!projectFound) {
-                        // console.log('project not found');
-                        var project = {
+                    if (!project) {
+                        // TODO: Add a post-process RPC to read project
+                        // progress data
+                        project = {
                             id: _.uniqueId('project-'),
                             serverId: record[self.map_parent][0],
                             text: record[self.map_parent][1],
+                            type: "project",
                             isProject: true,
                             open: true,
                         }
-                        task.parent = project.id;
                         data.push(project);
-                    } else {
-                        task.parent = projectFound.id;
                     }
+                    task.parent = project.id;
                 }
                 task.id = record[self.map_id];
                 task.text = record[self.map_text];
                 task.start_date = datetime;
                 task.duration = record[self.map_duration];
-                task.progress = record[self.map_progress];
+                task.progress = record[self.map_progress] / 100.0;
                 task.open = record[self.map_open];
                 task.links_serialized_json = record[self.map_links_serialized_json];
                 task.total_float = record[self.map_total_float];

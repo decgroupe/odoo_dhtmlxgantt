@@ -14,6 +14,12 @@
                     </div>
 
                     <div class="btn-group btn-sm o_dhx_button_right">
+                        <button type="button" class="btn btn-secondary o_dhx_show_all ">Show All</button>
+                        <button type="button" class="btn btn-secondary o_dhx_show_workdays">Show Work Days Only</button>
+                        <button type="button" class="btn btn-secondary o_dhx_show_officehours">Show Office Hours Only</button>
+                    </div>
+
+                    <div class="btn-group btn-sm o_dhx_button_right">
                         <button type="button" class="btn btn-secondary o_dhx_zoom_out ">Zoom Out</button>
                         <button type="button" class="btn btn-secondary o_dhx_zoom_in">Zoom In</button>
                     </div>

@@ -76,3 +76,5 @@ package-lock.json
 gantt/
 dhx_gantt/models/scetch.py
 dhx-gantt.code-workspace
+
+samples

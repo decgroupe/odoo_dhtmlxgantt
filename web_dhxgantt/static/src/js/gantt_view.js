@@ -24,6 +24,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.loadParams.type = 'list';
 
             this.loadParams.id_field = this.arch.attrs.id_field;
+            this.loadParams.parent = this.arch.attrs.parent;
             this.loadParams.date_start = this.arch.attrs.date_start;
             this.loadParams.duration = this.arch.attrs.duration;
             this.loadParams.open = this.arch.attrs.open;
@@ -36,6 +37,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
 
             this.loadParams.fieldNames = [
                 this.arch.attrs.id_field,
+                this.arch.attrs.parent,
                 this.arch.attrs.date_start,
                 this.arch.attrs.duration,
                 this.arch.attrs.open,

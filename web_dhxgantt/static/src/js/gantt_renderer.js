@@ -2,22 +2,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
     "use strict";
 
     var AbstractRenderer = require('web.AbstractRenderer');
-    var FormRenderer = require('web.FormRenderer');
-    // var BasicRenderer = require('web.BasicRenderer');
-    // var dialogs = require('web.view_dialogs');
+    var core = require('web.core');
 
-    // FormRenderer.include({
-    //     events: _.extend({}, FormRenderer.prototype.events, {
-    //         'click button.o_dhx_gantt': '_onClickShowGantt',
-    //     }),
-    //     _onClickShowGantt: function(){
-    //         console.log('well hello');
-    //     },
-    //     init: function () {
-    //         this._super.apply(this, arguments);
-    //         console.log('init() GanttFormRenderer');
-    //     },
-    // });
+    var _lt = core._lt;
 
     var GanttRenderer = AbstractRenderer.extend({
         template: "web_dhxgantt.gantt_view",
@@ -26,6 +13,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         events: _.extend({}, AbstractRenderer.prototype.events, {
             'click button.o_dhx_critical_path': '_onClickCriticalPath',
             'click button.o_dhx_reschedule': '_onClickReschedule',
+            'click button.o_dhx_show_all': '_onClickShowAll',
+            'click button.o_dhx_show_workdays': '_onClickShowWorkdays',
+            'click button.o_dhx_show_officehours': '_onClickShowOfficeHours',
             'click button.o_dhx_zoom_in': '_onClickZoomIn',
             'click button.o_dhx_zoom_out': '_onClickZoomOut'
         }),
@@ -43,21 +33,16 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this.map_links_serialized_json = params.map_links_serialized_json;
             this.link_model = params.link_model;
             this.is_total_float = params.is_total_float;
-            // console.log('params');
-            // console.log(params);
 
-            var self = this;
-            // todo: make this read from some database variable
-            // gantt.templates.scale_cell_class = function(date){
-            //     if(date.getDay()==5||date.getDay()==6){
-            //         return "o_dhx_gantt_weekend";
-            //     }
-            // };
+            // TODO: make this read from some database variable
+            gantt.templates.scale_cell_class = function (date) {
+                if (!gantt.isWorkTime(date)) {
+                    return "o_dhx_gantt_weekend";
+                }
+            };
 
             gantt.config.work_time = true;
             gantt.config.skip_off_time = true;
-            // console.log('columns');
-            // console.log(gantt.config.columns);
 
             gantt.config.columns = [
                 { name: "text", tree: true, resize: true },
@@ -69,19 +54,45 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 gantt.config.columns.push({ name: "total_float", label: "Total Float", align: "center" })
             }
 
-            gantt.setWorkTime({ day: 5, hours: false });
-            gantt.setWorkTime({ day: 6, hours: true });
-            gantt.setWorkTime({ day: 0, hours: true });
-            gantt.setWorkTime({ hours: [0, 23] });
-            // (duplicate)todo: make this read from some database variable
-            // gantt.templates.timeline_cell_class = function(task, date){
-            //     // if(date.getDay()==5||date.getDay()==6){ 
-            //     if(!gantt.isWorkTime({task:task, date: date})){
-            //         return "o_dhx_gantt_weekend";
-            //     }
+            // gantt.ignore_time = function (date) {
+            //     return !gantt.isWorkTime(date, "day");
             // };
+
+            // TODO: make this read from some database variable
+            gantt.setWorkTime({ day: 6, hours: false });
+            gantt.setWorkTime({ day: 7, hours: false });
+            // gantt.setWorkTime({ hours: [8, 17] });
+            gantt.setWorkTime({ hours: ["8:30-12:00", "13:30-17:00"] }); //global working hours
+
+
+            // TODO: make this read from some database variable
+            gantt.templates.timeline_cell_class = function (task, date) {
+                if (!gantt.isWorkTime({ task: task, date: date })) {
+                    return "o_dhx_gantt_weekend";
+                }
+            };
+
             var zoomConfig = {
                 levels: [
+                    // hours
+                    {
+                        name: "hour_24",
+                        scale_height: 27,
+                        scales: [
+                            { unit: "day", step: 1, format: "%d %M" },
+                            { unit: "hour", step: 1, format: "%H:%i" },
+                        ]
+                    },
+                    // hours
+                    {
+                        name: "hour_6",
+                        scale_height: 27,
+                        scales: [
+                            { unit: "day", step: 1, format: "%d %M" },
+                            { unit: "hour", step: 4, format: "%H:%i" },
+                        ]
+                    },
+                    // days
                     {
                         name: "day",
                         scale_height: 27,
@@ -90,6 +101,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                             { unit: "day", step: 1, format: "%d %M" }
                         ]
                     },
+                    // weeks
                     {
                         name: "week",
                         scale_height: 50,
@@ -106,6 +118,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                             { unit: "day", step: 1, format: "%j %D" }
                         ]
                     },
+                    // months
                     {
                         name: "month",
                         scale_height: 50,
@@ -115,6 +128,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                             { unit: "week", format: "Week #%W" }
                         ]
                     },
+                    // quarters
                     {
                         name: "quarter",
                         height: 50,
@@ -130,6 +144,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                             }
                         ]
                     },
+                    // years
                     {
                         name: "year",
                         scale_height: 50,
@@ -150,6 +165,22 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         _onClickReschedule: function () {
             // console.log('_onClickReschedule');
             this.trigger_up('gantt_schedule');
+        },
+        _onClickShowAll: function () {
+            gantt.ignore_time = null;
+            gantt.render();
+        },
+        _onClickShowWorkdays: function () {
+            gantt.ignore_time = function (date) {
+                return !gantt.isWorkTime(date, "day");
+            };
+            gantt.render();
+        },
+        _onClickShowOfficeHours: function () {
+            gantt.ignore_time = function (date) {
+                return !gantt.isWorkTime(date);
+            };
+            gantt.render();
         },
         _onClickZoomIn: function () {
             // console.log('_onClickZoomIn');
@@ -186,12 +217,17 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.addMarker({
                 start_date: new Date(), //a Date object that sets the marker's date
                 css: "today", //a CSS class applied to the marker
-                text: "Today", //the marker title
+                text: _lt("Today"), //the marker title
                 title: date_to_str(new Date()) // the marker's tooltip
             });
             var rootHeight = this.$el.height();
             var headerHeight = this.$('.o_dhx_gantt_header').height();
             this.$('.o_dhx_gantt').height(rootHeight - headerHeight);
+
+            // Set locale (lang) from current user settings
+            var context = this.getSession().user_context;
+            var locale = context.lang.substring(0, 2) || 'en_US';
+            gantt.i18n.setLocale(locale);
 
             gantt.init(gantt_container);
             gantt.parse(this.state.records);
