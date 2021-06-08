@@ -91,14 +91,6 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 data.csrf_token = core.csrf_token;
                 data.model_name = self.modelName;
                 data.timezone_offset = (-self.date_object.getTimezoneOffset());
-                data.map_text = self.map_text;
-                data.map_text = self.map_text;
-                data.map_identifier = self.map_identifier;
-                data.map_date_start = self.map_date_start;
-                data.map_duration = self.map_duration;
-                data.map_open = self.map_open;
-                data.map_progress = self.map_progress;
-                data.link_model = self.link_model;
                 return true;
             });
         },
