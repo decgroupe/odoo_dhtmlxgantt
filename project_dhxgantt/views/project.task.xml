@@ -15,7 +15,7 @@
                 progress="progress"
                 open="open"
                 links_serialized_json="links_serialized_json"
-                link_model="project.depending.tasks"
+                link_model_name="project.depending.tasks"
             />
         </field>
     </record>

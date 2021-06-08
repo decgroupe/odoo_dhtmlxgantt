@@ -27,7 +27,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.map_open = params.open;
             this.map_links_serialized_json = params.links_serialized_json;
             this.map_parent = params.parent;
-            this.linkModel = params.linkModel;
+            this.linkModelName = params.linkModelName;
             return this._load(params);
         },
         reload: function (id, params) {
@@ -137,7 +137,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
             args.push([values]);
             return this._rpc({
-                model: this.linkModel,
+                model: this.linkModelName,
                 method: 'create',
                 args: args,
             });
@@ -149,7 +149,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
             args.push([data.id]);
             return this._rpc({
-                model: this.linkModel,
+                model: this.linkModelName,
                 method: 'unlink',
                 args: args,
             });

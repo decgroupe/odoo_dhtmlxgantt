@@ -30,7 +30,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this.map_open = params.map_open;
             this.map_progress = params.map_progress;
             this.map_links_serialized_json = params.map_links_serialized_json;
-            this.link_model = params.link_model;
+            this.linkModelName = params.linkModelName;
 
             // TODO: make this read from some database variable
             gantt.templates.scale_cell_class = function (date) {
