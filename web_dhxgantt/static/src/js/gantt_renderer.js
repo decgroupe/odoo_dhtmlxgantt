@@ -19,18 +19,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             'click button.o_dhx_zoom_out': '_onClickZoomOut'
         }),
         init: function (parent, state, params) {
-            // console.log('init GanttRenderer');
             this._super.apply(this, arguments);
-            this.initDomain = params.initDomain;
             this.modelName = params.modelName;
-            this.map_text = params.map_text;
-            this.map_identifier = params.map_identifier;
-            this.map_date_start = params.map_date_start;
-            this.map_duration = params.map_duration;
-            this.map_open = params.map_open;
-            this.map_progress = params.map_progress;
-            this.map_links_serialized_json = params.map_links_serialized_json;
-            this.linkModelName = params.linkModelName;
 
             // TODO: make this read from some database variable
             gantt.templates.scale_cell_class = function (date) {
@@ -47,10 +37,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 { name: "start_date", align: "center", resize: true },
                 { name: "duration", align: "right" },
             ]
-
-            // gantt.ignore_time = function (date) {
-            //     return !gantt.isWorkTime(date, "day");
-            // };
 
             // TODO: make this read from some database variable
             gantt.setWorkTime({ day: 6, hours: false });
@@ -153,11 +139,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.ext.zoom.setLevel("week");
         },
         _onClickCriticalPath: function () {
-            // console.log('_onClickCriticalPath');
             this.trigger_up('gantt_show_critical_path');
         },
         _onClickReschedule: function () {
-            // console.log('_onClickReschedule');
             this.trigger_up('gantt_schedule');
         },
         _onClickShowAll: function () {
@@ -177,17 +161,13 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.render();
         },
         _onClickZoomIn: function () {
-            // console.log('_onClickZoomIn');
             gantt.ext.zoom.zoomIn();
         },
         _onClickZoomOut: function () {
-            // console.log('_onClickZoomOut');
             gantt.ext.zoom.zoomOut();
         },
         on_attach_callback: function () {
             this.renderGantt();
-            // console.log('on_attach_callback');
-            // console.log(this.$el);
         },
         renderGantt: function () {
             var gantt_container = this.$('.o_dhx_gantt').get(0)
@@ -199,7 +179,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             if (!this.events_set) {
                 var self = this;
                 gantt.attachEvent('onBeforeGanttRender', function () {
-                    // console.log('tadaaaa, onBeforeGanttRender');
                     var rootHeight = self.$el.height();
                     var headerHeight = self.$('.o_dhx_gantt_header').height();
                     self.$('.o_dhx_gantt').height(rootHeight - headerHeight);
@@ -237,11 +216,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             return res;
         },
         disableAllButtons: function () {
-            // console.log('disableAllButtons:: Renderer');
             this.$('.o_dhx_gantt_header').find('button').prop('disabled', true);
         },
         enableAllButtons: function () {
-            // console.log('enableAllButtons:: Renderer');
             this.$('.o_dhx_gantt_header').find('button').prop('disabled', false);
         },
         undoRenderCriticalTasks: function (data) {

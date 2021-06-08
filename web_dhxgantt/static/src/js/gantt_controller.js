@@ -4,7 +4,6 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
     var AbstractController = require('web.AbstractController');
     var core = require('web.core');
     var dialogs = require('web.view_dialogs');
-    // var BasicController = require('web.BasicController');
 
     var GanttController = AbstractController.extend({
         custom_events: _.extend({}, AbstractController.prototype.custom_events, {
@@ -16,29 +15,16 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
         }),
         date_object: new Date(),
         init: function (parent, model, renderer, params) {
-            // console.log('controller init');
             this._super.apply(this, arguments);
             this.projectModel = 'project.project';  // todo: read from view arch
         },
         _onGanttCreateDataProcessor: function (event) {
-            // console.log('_onGanttCreateDataProcessor');
             var self = this;
             if (this.dp_created) {
                 return;
             }
             this.dp_created = true;
             var dp = gantt.createDataProcessor(function (entity, action, data, id) {
-                // console.log('createDataProcessor');
-                // console.log('entity');
-                // console.log({entity});
-                // console.log({action});
-                // console.log({data});
-                // console.log({id});
-                // const services = {
-                //     "task": this.taskService,
-                //     "link": this.linkService
-                // };
-                // const service = services[entity];
                 switch (action) {
                     case "update":
                         return new gantt.Promise(function (resolve, reject) {
@@ -106,7 +92,6 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             this.gantt_configured = true;
             gantt.attachEvent('onBeforeLightbox', function (id) {
                 // todo: Change this to trigger_up from renderer !!! to avoid errors
-                // console.log('onBeforeLightbox');
                 var task = gantt.getTask(id);
                 var title = 'Open: ' + task.text;
                 if (self.form_dialog && !self.form_dialog.isDestroyed()) {
@@ -127,18 +112,14 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                         self.write_completed(record, isChanged);
                     }
                 }).open();
-                return false;//return false to prevent showing the default form
+                return false; //return false to prevent showing the default form
             });
         },
         write_completed: function (record, isChanged) {
-            // console.log('write_completed');
-            // console.log(this.renderer.domain);
             if (isChanged) {
                 var params = {
                     context: this.context,
                 };
-
-                // this.update(params, options);
                 this.update(params);
             }
         },
@@ -158,8 +139,6 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
 
             this._disableAllButtons();
             def = self.model.getCriticalPath().then(function (result) {
-                // console.log('critical path result');
-                // console.log(result);
                 self.renderer.renderCriticalTasks(result);
             });
             def.always(this._enableAllButtons.bind(this));

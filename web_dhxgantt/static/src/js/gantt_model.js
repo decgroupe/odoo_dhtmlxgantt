@@ -2,7 +2,6 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
     "use strict";
 
     var AbstractModel = require('web.AbstractModel');
-    var time = require('web.time');
 
     var GanttModel = AbstractModel.extend({
         get: function () {
@@ -25,7 +24,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.map_duration = params.duration;
             this.map_progress = params.progress;
             this.map_open = params.open;
-            this.map_links_serialized_json = params.links_serialized_json;
+            this.map_linksSerializedJson = params.linksSerializedJson;
             this.map_parent = params.parent;
             this.linkModelName = params.linkModelName;
             return this._load(params);
@@ -96,7 +95,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 task.duration = record[self.map_duration];
                 task.progress = record[self.map_progress] / 100.0;
                 task.open = record[self.map_open];
-                task.links_serialized_json = record[self.map_links_serialized_json];
+                task.links_serialized_json = record[self.map_linksSerializedJson];
 
                 data.push(task);
                 links.push.apply(links, JSON.parse(record.links_serialized_json))
