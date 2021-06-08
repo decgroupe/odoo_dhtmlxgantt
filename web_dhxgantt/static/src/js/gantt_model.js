@@ -44,7 +44,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 fields: this.fieldNames,
                 domain: self.domain,
                 orderBy: [{
-                    name: self.map_id,
+                    name: self.map_identifier,
                     asc: true,
                 }]
             })
@@ -60,7 +60,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.res_ids = [];
             var links = [];
             records.forEach(function (record) {
-                self.res_ids.push(record[self.map_id]);
+                self.res_ids.push(record[self.map_identifier]);
                 // value.add(-self.getSession().getTZOffset(value), 'minutes')
                 // data.timezone_offset = (-self.date_object.getTimezoneOffset());
                 var datetime;
@@ -90,7 +90,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     }
                     task.parent = project.id;
                 }
-                task.id = record[self.map_id];
+                task.id = record[self.map_identifier];
                 task.text = record[self.map_text];
                 task.start_date = datetime;
                 task.duration = record[self.map_duration];
