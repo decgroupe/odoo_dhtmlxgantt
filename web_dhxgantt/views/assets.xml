@@ -3,15 +3,14 @@
 
     <template id="assets_backend" name="web_dhxgantt assets" inherit_id="web.assets_backend">
         <xpath expr="//script[last()]" position="after">
-            <script type="text/javascript" src="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/dhtmlxgantt.js"></script>
-            <link rel="stylesheet" type="text/css" href="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/dhtmlxgantt.css"/>
-            <link rel="stylesheet" type="text/css" href="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/skins/dhtmlxgantt_material.css"/>
+            <script type="text/javascript" src="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/sources/dhtmlxgantt.js"></script>
+            <link rel="stylesheet" type="text/css" href="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/sources/dhtmlxgantt.css"/>
+            <link rel="stylesheet" type="text/css" href="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/sources/skins/dhtmlxgantt_material.css"/>
 
             <script type="text/javascript" src="/web_dhxgantt/static/src/js/gantt_model.js"></script>
             <script type="text/javascript" src="/web_dhxgantt/static/src/js/gantt_renderer.js"></script>
             <script type="text/javascript" src="/web_dhxgantt/static/src/js/gantt_controller.js"></script>
             <script type="text/javascript" src="/web_dhxgantt/static/src/js/gantt_view.js"></script>
-            <script type="text/javascript" src="/web_dhxgantt/static/src/js/gantt_action.js"></script>
             <link rel="stylesheet" type="text/css" href="/web_dhxgantt/static/src/css/gantt.css"/>
         </xpath>
     </template>
