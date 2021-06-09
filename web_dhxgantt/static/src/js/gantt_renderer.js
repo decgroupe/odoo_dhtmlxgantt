@@ -25,12 +25,55 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.config.work_time = true;
             gantt.config.skip_off_time = false;
 
+            // https://docs.dhtmlx.com/gantt/desktop__specifying_columns.html
+            // Note that `resize` is a PRO edition functionality
             gantt.config.columns = [
                 // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
-                { name: "text", tree: true, resize: true },
+                { name: "id", label: "ID", tree: true, width: 110, min_width: 110 },
                 { name: "start_date", align: "center", resize: true },
-                { name: "duration", align: "right" },
+                { name: "duration", label: "Dur.", align: "right", width: 40 },
+                { name: "owner", label: "Owner", align: "left", width: 200 },
             ]
+            gantt.config.layout = {
+                css: "gantt_container",
+                cols: [
+                    {
+                        width: 200,
+                        // adding horizontal scrollbar to the grid via 
+                        // the scrollX attribute
+                        rows: [
+                            {
+                                view: "grid",
+                                scrollX: "gridScroll",
+                                scrollable: true,
+                                scrollY: "scrollVer"
+                            },
+                            {
+                                view: "scrollbar",
+                                id: "gridScroll"
+                            }
+                        ]
+                    },
+                    // { resizer: true, width: 1 },
+                    {
+                        rows: [
+                            {
+                                view: "timeline",
+                                scrollX: "scrollHor",
+                                scrollY: "scrollVer"
+                            },
+                            {
+                                view: "scrollbar",
+                                id: "scrollHor"
+                            }
+                        ]
+                    },
+                    {
+                        view: "scrollbar",
+                        id: "scrollVer"
+                    }
+                ]
+            };
 
             var zoomConfig = {
                 levels: [

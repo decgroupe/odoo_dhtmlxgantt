@@ -30,7 +30,8 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             
             // Save fields names
             this.loadParams.identifier = this.arch.attrs.identifier;
-            this.loadParams.parent = this.arch.attrs.parent;
+            this.loadParams.project = this.arch.attrs.project;
+            this.loadParams.owner = this.arch.attrs.owner;
             this.loadParams.date_start = this.arch.attrs.date_start;
             this.loadParams.duration = this.arch.attrs.duration;
             this.loadParams.open = this.arch.attrs.open;
@@ -41,7 +42,8 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             // Fields to read
             this.loadParams.fieldNames = [
                 this.loadParams.identifier,
-                this.loadParams.parent,
+                this.loadParams.project,
+                this.loadParams.owner,
                 this.loadParams.date_start,
                 this.loadParams.duration,
                 this.loadParams.open,

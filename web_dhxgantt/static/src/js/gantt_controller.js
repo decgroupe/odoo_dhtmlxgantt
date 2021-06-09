@@ -4,6 +4,8 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
     var AbstractController = require('web.AbstractController');
     var core = require('web.core');
     var dialogs = require('web.view_dialogs');
+    
+    var _lt = core._lt;
 
     var GanttController = AbstractController.extend({
         custom_events: _.extend({}, AbstractController.prototype.custom_events, {
@@ -99,14 +101,14 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             gantt.attachEvent('onBeforeLightbox', function (id) {
                 // todo: Change this to trigger_up from renderer !!! to avoid errors
                 var task = gantt.getTask(id);
-                var title = 'Open: ' + task.text;
+                var title = _lt('Open: ') + task.text;
                 if (self.form_dialog && !self.form_dialog.isDestroyed()) {
                     return false;
                 }
                 var session = self.getSession();
                 var context = session ? session.user_context : {};
                 var modelName = task.isProject && self.projectModelName || self.model.modelName;
-                var target_id = task.isProject && task.serverId || task.id;
+                var target_id = task.isProject && task.projectId || task.id;
                 var res_id = parseInt(target_id, 10).toString() === target_id ? parseInt(target_id, 10) : target_id;
                 self.form_dialog = new dialogs.FormViewDialog(self, {
                     res_model: modelName,
