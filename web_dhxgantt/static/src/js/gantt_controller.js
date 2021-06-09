@@ -35,7 +35,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                                         // Do not update to avoid a task "jump" effect: self.update({});
                                     }, function (res) {
                                         resolve({ state: "error" });
-                                        gantt.deleteLink(data.id);
+                                        self.update({});
                                     });
                                     break;
                             }
@@ -45,7 +45,8 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                             switch (entity) {
                                 case "link":
                                     self.model.createLink(data).then(function (res) {
-                                        // set res.id as the id returned from the server to update client id :)
+                                        // set res.id as the id returned from 
+                                        // the server to update client id
                                         res.id = res[0];
                                         resolve(res);
                                     }, function (res) {
@@ -59,7 +60,12 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                         return new gantt.Promise(function (resolve, reject) {
                             switch (entity) {
                                 case "link":
-                                    return self.model.deleteLink(data);
+                                    self.model.deleteLink(data).then(function (res) {
+                                        resolve(res);
+                                    }, function (res) {
+                                        resolve({ state: "error" });
+                                        self.update({});
+                                    });
                                     break;
                             }
                         });
