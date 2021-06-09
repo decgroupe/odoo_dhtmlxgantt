@@ -29020,6 +29020,22 @@ function ScaleHelper(gantt) {
     processIgnores: function processIgnores(config) {
       config.ignore_x = {};
       config.display_count = config.count;
+      var n = config.count;
+      if (config.ignore_x = {}, gantt.ignore_time || gantt.config.skip_off_time) {
+        var ignore = gantt.ignore_time || function () {
+          return false
+        };
+        n = 0;
+        for (var r = 0; r < config.trace_x.length; r++) {
+          if (ignore.call(gantt, config.trace_x[r]) || this._ignore_time_config.call(gantt, config.trace_x[r], config)) {
+            config.ignore_x[config.trace_x[r].valueOf()] = true;
+            config.ignored_colls = true;
+          } else {
+            n++;
+          }
+        }
+      }
+      config.display_count = n
     },
     initColSizes: function initColSizes(config, min_col_width, full_width, line_height) {
       var cont_width = full_width;

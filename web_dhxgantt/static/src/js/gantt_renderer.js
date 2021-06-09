@@ -22,42 +22,22 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this._super.apply(this, arguments);
             this.modelName = params.modelName;
 
-            // TODO: make this read from some database variable
-            gantt.templates.scale_cell_class = function (date) {
-                if (!gantt.isWorkTime(date)) {
-                    return "o_dhx_gantt_weekend";
-                }
-            };
-
             gantt.config.work_time = true;
-            gantt.config.skip_off_time = true;
+            gantt.config.skip_off_time = false;
 
             gantt.config.columns = [
+                // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
                 { name: "text", tree: true, resize: true },
                 { name: "start_date", align: "center", resize: true },
                 { name: "duration", align: "right" },
             ]
-
-            // TODO: make this read from some database variable
-            gantt.setWorkTime({ day: 6, hours: false });
-            gantt.setWorkTime({ day: 7, hours: false });
-            // gantt.setWorkTime({ hours: [8, 17] });
-            gantt.setWorkTime({ hours: ["8:30-12:00", "13:30-17:00"] }); //global working hours
-
-
-            // TODO: make this read from some database variable
-            gantt.templates.timeline_cell_class = function (task, date) {
-                if (!gantt.isWorkTime({ task: task, date: date })) {
-                    return "o_dhx_gantt_weekend";
-                }
-            };
 
             var zoomConfig = {
                 levels: [
                     // hours
                     {
                         name: "hour_24",
-                        scale_height: 27,
+                        scale_height: 50,
                         scales: [
                             { unit: "day", step: 1, format: "%d %M" },
                             { unit: "hour", step: 1, format: "%H:%i" },
@@ -66,7 +46,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     // hours
                     {
                         name: "hour_6",
-                        scale_height: 27,
+                        scale_height: 50,
                         scales: [
                             { unit: "day", step: 1, format: "%d %M" },
                             { unit: "hour", step: 4, format: "%H:%i" },
@@ -75,7 +55,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     // days
                     {
                         name: "day",
-                        scale_height: 27,
+                        scale_height: 50,
                         min_column_width: 80,
                         scales: [
                             { unit: "day", step: 1, format: "%d %M" }
@@ -137,6 +117,59 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             };
             gantt.ext.zoom.init(zoomConfig);
             gantt.ext.zoom.setLevel("week");
+
+            // TODO: make this read from some database variable
+            gantt.setWorkTime({ day: 6, hours: false });
+            gantt.setWorkTime({ day: 7, hours: false });
+            // gantt.setWorkTime({ hours: [8, 17] });
+            gantt.setWorkTime({ hours: ["8:30-12:00", "13:30-17:00"] }); //global working hours
+
+            // TODO: make this read from some database variable
+            gantt.templates.scale_cell_class = function (date) {
+                if (!gantt.isWorkTime(date)) {
+                    return "o_dhx_gantt_weekend";
+                }
+            };
+
+            // TODO: make this read from some database variable
+            gantt.templates.timeline_cell_class = function (task, date) {
+                if (!gantt.isWorkTime({ task: task, date: date })) {
+                    return "o_dhx_gantt_weekend";
+                }
+            };
+            this._updateIgnoreTime();
+        },
+        _updateIgnoreTime: function (level) {
+            if (level == null) {
+                level = gantt.ext.zoom.getCurrentLevel();
+            }
+
+            var hour24 = gantt.ext.zoom._getZoomIndexByName("hour_24")
+            var hour6 = gantt.ext.zoom._getZoomIndexByName("hour_6")
+            var day = gantt.ext.zoom._getZoomIndexByName("day")
+            var week = gantt.ext.zoom._getZoomIndexByName("week")
+            var month = gantt.ext.zoom._getZoomIndexByName("month")
+            var quarter = gantt.ext.zoom._getZoomIndexByName("quarter")
+            var year = gantt.ext.zoom._getZoomIndexByName("year")
+
+            if (level == hour6 || level == hour24) {
+                gantt.ignore_time = function (date) {
+                    if (date.getHours() < 8 || date.getHours() > 17) {
+                        return true;
+                    } else {
+                        return !gantt.isWorkTime(date, "day");
+                    }
+                }
+            } else if (level == day || level == week || level == month) {
+                gantt.ignore_time = function (date) {
+                    return !gantt.isWorkTime(date, "day");
+                }
+            } else if (level == quarter || level == year) {
+                gantt.ignore_time = null;
+            } else {
+                gantt.ignore_time = null;
+            }
+
         },
         _onClickCriticalPath: function () {
             this.trigger_up('gantt_show_critical_path');
@@ -149,22 +182,24 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.render();
         },
         _onClickShowWorkdays: function () {
-            gantt.ignore_time = function (date) {
-                return !gantt.isWorkTime(date, "day");
-            };
+            gantt.ext.zoom.setLevel("week");
+            this._updateIgnoreTime();
             gantt.render();
         },
         _onClickShowOfficeHours: function () {
-            gantt.ignore_time = function (date) {
-                return !gantt.isWorkTime(date);
-            };
+            gantt.ext.zoom.setLevel("hour_24");
+            this._updateIgnoreTime();
             gantt.render();
         },
         _onClickZoomIn: function () {
             gantt.ext.zoom.zoomIn();
+            this._updateIgnoreTime();
+            gantt.render();
         },
         _onClickZoomOut: function () {
             gantt.ext.zoom.zoomOut();
+            this._updateIgnoreTime();
+            gantt.render();
         },
         on_attach_callback: function () {
             this.renderGantt();
