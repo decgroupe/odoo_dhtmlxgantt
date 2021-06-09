@@ -16,6 +16,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         },
         load: function (params) {
             this.modelName = params.modelName;
+            this.linkModelName = params.linkModelName;
+
             this.fieldNames = params.fieldNames;
 
             this.map_identifier = params.identifier;
@@ -26,7 +28,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.map_open = params.open;
             this.map_linksSerializedJson = params.linksSerializedJson;
             this.map_parent = params.parent;
-            this.linkModelName = params.linkModelName;
+            
             return this._load(params);
         },
         reload: function (id, params) {
