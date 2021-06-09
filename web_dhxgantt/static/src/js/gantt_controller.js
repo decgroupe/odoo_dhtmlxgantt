@@ -16,7 +16,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
         date_object: new Date(),
         init: function (parent, model, renderer, params) {
             this._super.apply(this, arguments);
-            this.projectModel = 'project.project';  // todo: read from view arch
+            this.projectModelName = params.projectModelName;
         },
         _onGanttCreateDataProcessor: function (event) {
             var self = this;
@@ -99,7 +99,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 }
                 var session = self.getSession();
                 var context = session ? session.user_context : {};
-                var modelName = task.isProject && self.projectModel || self.model.modelName;
+                var modelName = task.isProject && self.projectModelName || self.model.modelName;
                 var target_id = task.isProject && task.serverId || task.id;
                 var res_id = parseInt(target_id, 10).toString() === target_id ? parseInt(target_id, 10) : target_id;
                 self.form_dialog = new dialogs.FormViewDialog(self, {
