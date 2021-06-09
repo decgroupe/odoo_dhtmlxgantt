@@ -12,6 +12,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
 
     var GanttView = AbstractView.extend({
         viewType: 'dhxgantt',
+        groupable: false,
         display_name: _lt('Gantt'),
         icon: 'fa-tasks',
         config: _.extend({}, AbstractView.prototype.config, {
@@ -53,6 +54,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             ];
 
             this.rendererParams.modelName = params.modelName;
+            this.rendererParams.drag_progress = (this.arch.attrs.drag_progress == "true");
         },
         _processFieldsView: function (fieldsView, viewType) {
             var fv = this._super.apply(this, arguments);

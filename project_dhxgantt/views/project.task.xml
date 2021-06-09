@@ -7,6 +7,7 @@
         <field name="type">dhxgantt</field>
         <field name="arch" type="xml">
             <dhxgantt
+                drag_progress="false"
                 project_model_name="project.project"
                 identifier="id"
                 project="project_id"

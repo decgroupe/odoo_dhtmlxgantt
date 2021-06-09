@@ -24,6 +24,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
             gantt.config.work_time = true;
             gantt.config.skip_off_time = false;
+            gantt.config.drag_progress = params.drag_progress;
 
             // https://docs.dhtmlx.com/gantt/desktop__specifying_columns.html
             // Note that `resize` is a PRO edition functionality
