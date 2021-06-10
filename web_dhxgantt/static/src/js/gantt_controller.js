@@ -4,7 +4,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
     var AbstractController = require('web.AbstractController');
     var core = require('web.core');
     var dialogs = require('web.view_dialogs');
-    
+
     var _lt = core._lt;
 
     var GanttController = AbstractController.extend({
@@ -88,7 +88,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 return true;
             });
         },
-        _onGanttUpdated: function(event){
+        _onGanttUpdated: function (event) {
             event.stopPropagation();
             console.log('_onGanttUpdated');
         },
@@ -107,19 +107,24 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 }
                 var session = self.getSession();
                 var context = session ? session.user_context : {};
-                var modelName = task.isProject && self.projectModelName || self.model.modelName;
-                var target_id = task.isProject && task.projectId || task.id;
-                var res_id = parseInt(target_id, 10).toString() === target_id ? parseInt(target_id, 10) : target_id;
-                self.form_dialog = new dialogs.FormViewDialog(self, {
-                    res_model: modelName,
-                    res_id: res_id,
-                    context: context,
-                    title: title,
-                    // view_id: Number(this.open_popup_action),
-                    on_saved: function (record, isChanged) {
-                        self.write_completed(record, isChanged);
-                    }
-                }).open();
+                var res_model = self.model.modelName;
+                var res_id = task.id;
+                if (task.isGroup) {
+                    res_model = task.modelName;
+                    res_id = task.modelId;
+                }
+                if (res_model && res_id) {
+                    self.form_dialog = new dialogs.FormViewDialog(self, {
+                        res_model: res_model,
+                        res_id: res_id,
+                        context: context,
+                        title: title,
+                        // view_id: Number(this.open_popup_action),
+                        on_saved: function (record, isChanged) {
+                            self.write_completed(record, isChanged);
+                        }
+                    }).open();
+                }
                 return false; //return false to prevent showing the default form
             });
         },

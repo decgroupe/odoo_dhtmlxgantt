@@ -17,10 +17,9 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return res;
         },
         load: function (params) {
+            this.fields = params.fields;
             this.modelName = params.modelName;
             this.linkModelName = params.linkModelName;
-
-            this.fieldNames = params.fieldNames;
 
             // Store field names mapping
             this.map = {}
@@ -39,7 +38,18 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return this._load(params);
         },
         reload: function (id, params) {
+            var self = this;
+            if ('groupBy' in params === false) {
+                params.groupBy = self.groupBy;
+            }
             return this._load(params);
+        },
+        _getFields: function () {
+            var self = this;
+            var values = Object.keys(self.map).map(function(key){
+                return self.map[key];
+            });
+            return values;
         },
         _load: function (params) {
             var self = this;
@@ -53,7 +63,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return self._rpc({
                 model: self.modelName,
                 method: 'read_group',
-                fields: self.fieldNames,
+                fields: self._getFields(),
                 domain: self.domain,
                 groupBy: self.groupBy,
                 orderBy: [{
@@ -65,7 +75,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 return self._rpc({
                     model: self.modelName,
                     method: 'search_read',
-                    fields: self.fieldNames.concat(self.groupBy),
+                    fields: self._getFields().concat(self.groupBy),
                     domain: self.domain,
                 }).then(function (records) {
                     self.convertData(records, groups, self.groupBy);
@@ -86,7 +96,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                         id: _.uniqueId('project-'),
                         groupBy: {},
                         type: gantt.config.types.project,
-                        isProject: true,
+                        isGroup: true,
                         open: true,
                         columnTitle: field,
                     }
@@ -95,6 +105,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                         project.groupBy[field] = rec[field][0];
                         project.text = rec[field][1];
                         project.columnTitle = rec[field][1] + ' ' + project.columnTitle;
+                        // Add model informations to allow opening it as a Form
+                        if (field in self.fields) {
+                            project.modelName = self.fields[field].relation || '';
+                            project.modelId = rec[field][0] || 0;
+                        }
                     } else {
                         project.groupBy[field] = rec[field];
                         project.text = rec[field];
@@ -168,7 +183,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.links = links;
         },
         updateTask: function (data) {
-            if (data.isProject) {
+            if (data.isGroup) {
                 return $.when();
             }
             var values = {};
@@ -197,7 +212,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return this._rpc({
                 model: this.linkModelName,
                 method: 'create',
-                args: [values],
+                args: [[values]],
             });
         },
         deleteLink: function (data) {

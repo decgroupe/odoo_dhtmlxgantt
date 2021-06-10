@@ -21,6 +21,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         init: function (parent, state, params) {
             this._super.apply(this, arguments);
             this.modelName = params.modelName;
+            this.fieldsViewInfo = params.fieldsViewInfo;
 
             gantt.config.work_time = true;
             gantt.config.skip_off_time = false;

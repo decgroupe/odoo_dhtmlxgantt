@@ -26,11 +26,12 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.controllerParams.projectModelName = this.arch.attrs.project_model_name;
 
             this.loadParams.type = 'list';
+            this.loadParams.fields = this.fields;
             this.loadParams.modelName = params.modelName;
             this.loadParams.linkModelName = this.arch.attrs.link_model_name;
             this.loadParams.defaultGroupBy = this.arch.attrs.default_group_by;
             
-            // Save fields names
+            // Save fields to read and map them with internal names
             this.loadParams.identifier = this.arch.attrs.identifier;
             this.loadParams.project = this.arch.attrs.project;
             this.loadParams.owner = this.arch.attrs.owner;
@@ -41,20 +42,8 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.loadParams.text = this.arch.attrs.text;
             this.loadParams.links = this.arch.attrs.links;
 
-            // Fields to read
-            this.loadParams.fieldNames = [
-                this.loadParams.identifier,
-                this.loadParams.project,
-                this.loadParams.owner,
-                this.loadParams.date_start,
-                this.loadParams.duration,
-                this.loadParams.open,
-                this.loadParams.progress,
-                this.loadParams.text,
-                this.loadParams.links,
-            ];
-
             this.rendererParams.modelName = params.modelName;
+            this.rendererParams.fieldsViewInfo = viewInfo.fields;
             this.rendererParams.drag_progress = (this.arch.attrs.drag_progress == "true");
         },
         _processFieldsView: function (fieldsView, viewType) {
