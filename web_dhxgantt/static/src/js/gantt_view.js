@@ -38,7 +38,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.loadParams.open = this.arch.attrs.open;
             this.loadParams.progress = this.arch.attrs.progress;
             this.loadParams.text = this.arch.attrs.text;
-            this.loadParams.linksSerializedJson = this.arch.attrs.links_serialized_json;
+            this.loadParams.links = this.arch.attrs.links;
 
             // Fields to read
             this.loadParams.fieldNames = [
@@ -50,7 +50,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
                 this.loadParams.open,
                 this.loadParams.progress,
                 this.loadParams.text,
-                this.loadParams.linksSerializedJson,
+                this.loadParams.links,
             ];
 
             this.rendererParams.modelName = params.modelName;

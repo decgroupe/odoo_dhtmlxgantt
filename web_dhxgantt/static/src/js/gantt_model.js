@@ -22,15 +22,17 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
             this.fieldNames = params.fieldNames;
 
-            this.identifier = params.identifier;
-            this.text = params.text;
-            this.date_start = params.date_start;
-            this.duration = params.duration;
-            this.progress = params.progress;
-            this.open = params.open;
-            this.linksSerializedJson = params.linksSerializedJson;
-            this.project = params.project;
-            this.owner = params.owner;
+            // Store field names mapping
+            this.map = {}
+            this.map.identifier = params.identifier;
+            this.map.text = params.text;
+            this.map.date_start = params.date_start;
+            this.map.duration = params.duration;
+            this.map.progress = params.progress;
+            this.map.open = params.open;
+            this.map.links = params.links;
+            this.map.project = params.project;
+            this.map.owner = params.owner;
 
             return this._load(params);
         },
@@ -48,7 +50,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 fields: this.fieldNames,
                 domain: self.domain,
                 orderBy: [{
-                    name: self.identifier,
+                    name: self.map.identifier,
                     asc: true,
                 }]
             }).then(function (records) {
@@ -63,28 +65,28 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.res_ids = [];
             var links = [];
             records.forEach(function (record) {
-                self.res_ids.push(record[self.identifier]);
+                self.res_ids.push(record[self.map.identifier]);
                 // value.add(-self.getSession().getTZOffset(value), 'minutes')
                 // data.timezone_offset = (-self.date_object.getTimezoneOffset());
                 var datetime;
-                if (record[self.date_start]) {
-                    datetime = formatFunc(record[self.date_start]);
+                if (record[self.map.date_start]) {
+                    datetime = formatFunc(record[self.map.date_start]);
                 } else {
                     datetime = false;
                 }
 
                 var task = {};
-                if (self.project) {
+                if (self.map.project) {
                     var project = data.find(function (element) {
-                        return element.isProject && element.projectId == record[self.project][0];
+                        return element.isProject && element.projectId == record[self.map.project][0];
                     });
                     if (!project) {
                         // TODO: Add a post-process RPC to read project
                         // progress data
                         project = {
                             id: _.uniqueId('project-'),
-                            projectId: record[self.project][0],
-                            text: record[self.project][1],
+                            projectId: record[self.map.project][0],
+                            text: record[self.map.project][1],
                             type: gantt.config.types.project,
                             isProject: true,
                             open: true,
@@ -93,18 +95,18 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     }
                     task.parent = project.id;
                 }
-                task.id = record[self.identifier];
-                task.text = record[self.text];
+                task.id = record[self.map.identifier];
+                task.text = record[self.map.text];
                 task.type = gantt.config.types.type_task;
                 task.start_date = datetime;
-                task.owner = record[self.owner][1];
-                task.duration = record[self.duration];
-                task.progress = record[self.progress] / 100.0;
-                task.open = record[self.open];
-                task.links_serialized_json = record[self.linksSerializedJson];
+                task.owner = record[self.map.owner][1];
+                task.duration = record[self.map.duration];
+                task.progress = record[self.map.progress] / 100.0;
+                task.open = record[self.map.open];
+                task.links = record[self.map.links];
 
                 data.push(task);
-                links.push.apply(links, JSON.parse(record.links_serialized_json))
+                links.push.apply(links, JSON.parse(task.links))
             });
             this.records = data;
             this.links = links;
@@ -130,33 +132,23 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             });
         },
         createLink: function (data) {
-            // console.log('createLink');
-            // console.log({data});
-            var args = [];
             var values = {};
-
             values.id = data.id;
-            values.task_id = data.source;
-            values.depending_task_id = data.target;
-            values.relation_type = data.type;
+            values.source_id = data.source;
+            values.target_id = data.target;
+            values.type = data.type;
 
-            args.push([values]);
             return this._rpc({
                 model: this.linkModelName,
                 method: 'create',
-                args: args,
+                args: [values],
             });
         },
         deleteLink: function (data) {
-            // console.log('deleteLink');
-            // console.log({data});
-            var args = [];
-
-            args.push([data.id]);
             return this._rpc({
                 model: this.linkModelName,
                 method: 'unlink',
-                args: args,
+                args: [data.id],
             });
         },
         getCriticalPath: function () {

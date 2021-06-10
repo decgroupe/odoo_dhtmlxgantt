@@ -17,8 +17,8 @@
                 duration="planned_duration"
                 progress="progress"
                 open="open"
-                links_serialized_json="links_serialized_json"
-                link_model_name="project.depending.tasks"
+                links="links"
+                link_model_name="project.task.link"
             />
         </field>
     </record>
@@ -40,19 +40,19 @@
                         <field name="planned_duration"/>
                     </group>
                     <separator string="Predecessors"/>
-                    <field name="dependency_task_ids">
-                        <tree editable="buttom">
+                    <field name="upstream_task_ids">
+                        <tree editable="bottom">
                             <field name="project_id" invisible="1"/>
-                            <field name="task_id" domain="[('project_id', '=', project_id)]"/>
-                            <field name="relation_type"/>
+                            <field name="source_id" domain="[('project_id', '=', project_id)]"/>
+                            <field name="type"/>
                         </tree>
                     </field>
                     <separator string="Successors"/>
-                    <field name="depending_task_ids">
-                        <tree editable="buttom">
+                    <field name="downstream_task_ids">
+                        <tree editable="bottom">
                             <field name="project_id" invisible="1"/>
-                            <field name="depending_task_id" domain="[('project_id', '=', project_id)]"/>
-                            <field name="relation_type"/>
+                            <field name="target_id" domain="[('project_id', '=', project_id)]"/>
+                            <field name="type"/>
                         </tree>
                     </field>
                 </page>

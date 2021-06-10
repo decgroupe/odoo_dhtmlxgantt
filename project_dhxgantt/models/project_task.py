@@ -7,64 +7,69 @@ from datetime import timedelta
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 
-
 _logger = logging.getLogger(__name__)
 
 
 class ProjectTask(models.Model):
     _inherit = "project.task"
 
-    planned_duration = fields.Integer('Duration', default=7)
+    planned_duration = fields.Integer(
+        'Duration',
+        default=7,
+    )
     lag_time = fields.Integer('Lag Time')
-    depending_task_ids = fields.One2many(
-        'project.depending.tasks',
-        'task_id',
+    downstream_task_ids = fields.One2many(
+        comodel_name='project.task.link',
+        inverse_name='source_id',
+        help='Tasks that depend on this task.',
     )
-    dependency_task_ids = fields.One2many(
-        'project.depending.tasks', 'depending_task_id'
+    upstream_task_ids = fields.One2many(
+        comodel_name='project.task.link',
+        inverse_name='target_id',
+        help="Tasks on which this task depends.",
     )
-    links_serialized_json = fields.Char(
-        'Serialized Links JSON', compute="compute_links_json"
-    )
-
-    recursive_dependency_task_ids = fields.Many2many(
+    recursive_upstream_task_ids = fields.Many2many(
         string='Recursive Dependencies',
         comodel_name='project.task',
-        compute='_compute_recursive_dependency_task_ids'
+        compute='_compute_recursive_upstream_task_ids'
+    )
+    links = fields.Char(
+        string='Links',
+        compute="_compute_links",
+        help="Links serialized as JSON"
     )
 
-    @api.depends('dependency_task_ids')
-    def _compute_recursive_dependency_task_ids(self):
-        for task in self:
-            task.recursive_dependency_task_ids = task.get_dependency_tasks(
-                task,
-                True,
+    @api.depends('upstream_task_ids')
+    def _compute_recursive_upstream_task_ids(self):
+        for rec in self:
+            rec.recursive_upstream_task_ids = rec.get_dependency_tasks(
+                task=rec,
+                recursive=True,
             )
 
     @api.model
     def get_dependency_tasks(self, task, recursive=False):
         dependency_tasks = task.with_context(
             prefetch_fields=False,
-        ).dependency_task_ids
+        ).upstream_task_ids
         if recursive:
             for t in dependency_tasks:
                 dependency_tasks |= self.get_dependency_tasks(t, recursive)
         return dependency_tasks
 
     @api.multi
-    def compute_links_json(self):
+    def _compute_links(self):
         for r in self:
             links = []
-            r.links_serialized_json = '['
-            for link in r.dependency_task_ids:
+            for link in r.upstream_task_ids:
                 json_obj = {
                     'id': link.id,
-                    'source': link.task_id.id,
-                    'target': link.depending_task_id.id,
-                    'type': link.relation_type
+                    'source': link.source_id.id,
+                    'target': link.target_id.id,
+                    'type': link.type
                 }
                 links.append(json_obj)
-            r.links_serialized_json = json.dumps(links)
+            r.links = json.dumps(links)
 
     def duration_between_dates(self, date_from, date_to):
         return (date_to - date_from).days
@@ -89,15 +94,14 @@ class ProjectTask(models.Model):
         while current_task:
             critical_path.append(current_task)
             critical_tasks.append(current_task.id)
-            # _logger.info(current_task.depending_task_ids)
-            # depending_tasks = current_task.depending_task_ids.mapped('depending_task_id')
+            # _logger.info(current_task.downstream_task_ids)
+            # depending_tasks = current_task.downstream_task_ids.mapped('target_id')
             # sorted_by_duration = depending_tasks.sorted('planned_duration', True)
-            sorted_by_duration = current_task.depending_task_ids.sorted(
-                lambda dep: dep.depending_task_id.planned_duration,
-                reverse=True
+            sorted_by_duration = current_task.downstream_task_ids.sorted(
+                lambda dep: dep.target_id.planned_duration, reverse=True
             )
             if sorted_by_duration:
-                current_task = sorted_by_duration[0].depending_task_id
+                current_task = sorted_by_duration[0].target_id
                 critical_links.append(sorted_by_duration[0].id)
             else:
                 current_task = False
@@ -121,7 +125,7 @@ class ProjectTask(models.Model):
         tasks = self.env['project.task'].search(
             [('project_id', '=', projects.id)]
         )
-        leading_tasks = tasks.filtered(lambda t: not t.dependency_task_ids)
+        leading_tasks = tasks.filtered(lambda t: not t.upstream_task_ids)
 
         # Mark all the vertices as not visited
         visited = []
@@ -150,10 +154,10 @@ class ProjectTask(models.Model):
                 # Get all adjacent vertices of the dequeued vertex s. If an
                 # adjacent has not been visited, then mark it visited and
                 # enqueue it
-                for child in s.depending_task_ids:
-                    if child.depending_task_id.id not in visited:
-                        queue.append(child.depending_task_id)
-                        # visited.append(child.depending_task_id.id)
+                for child in s.downstream_task_ids:
+                    if child.target_id.id not in visited:
+                        queue.append(child.target_id)
+                        # visited.append(child.target_id.id)
 
     @api.multi
     def set_date_end(self):
@@ -165,7 +169,7 @@ class ProjectTask(models.Model):
     def schedule(self, visited):
         # _logger.info('Rescheduling task ', self and self.name or 'NONE')
         self.ensure_one()
-        if not self.dependency_task_ids:
+        if not self.upstream_task_ids:
             # _logger.info('No dependencies')
             # TODO: adjust datetime for server vs local timezone
             if self.project_id and self.project_id.date_start:
@@ -174,17 +178,17 @@ class ProjectTask(models.Model):
                     self.project_id.date_start, datetime.time.min
                 )
                 self.set_date_end()
-        for parent in self.dependency_task_ids:
+        for parent in self.upstream_task_ids:
             # _logger.info('found dependency on ', parent)
-            date_start = parent.task_id.date_start
+            date_start = parent.source_id.date_start
             if not date_start:
                 continue
             date_end = date_start + datetime.timedelta(
-                days=parent.task_id.planned_duration
+                days=parent.source_id.planned_duration
             )
-            # _logger.info('schedule task {0} based on parent {1}'.format(self.name, parent.task_id.name))
+            # _logger.info('schedule task {0} based on parent {1}'.format(self.name, parent.source_id.name))
             # _logger.info('parnet starts at {0} and ends at {1}'.format(date_start, date_end))
-            if parent.relation_type == "0":  # Finish to Start
+            if parent.type == "0":  # Finish to Start
                 if date_end:
                     todo_date_start = date_end + datetime.timedelta(
                         days=1 - self.lag_time
@@ -202,7 +206,7 @@ class ProjectTask(models.Model):
                         if callable(set_date_end):
                             self.set_date_end()
                         # _logger.info('setting date_start to {0}'.format(self.date_start))
-            elif parent.relation_type == "1":  # Start to Start
+            elif parent.type == "1":  # Start to Start
                 if date_start:
                     todo_date_start = date_start + datetime.timedelta(
                         self.lag_time
@@ -220,7 +224,7 @@ class ProjectTask(models.Model):
                         if callable(set_date_end):
                             self.set_date_end()
                         # _logger.info('setting date_start to {0}'.format(self.date_start))
-            elif parent.relation_type == "2":  # Finish to Finish
+            elif parent.type == "2":  # Finish to Finish
                 if date_end:
                     todo_date_start = date_end - datetime.timedelta(
                         self.planned_duration - self.lag_time
@@ -238,7 +242,7 @@ class ProjectTask(models.Model):
                         if callable(set_date_end):
                             self.set_date_end()
                         # _logger.info('setting date_start to {0}'.format(self.date_start))
-            elif parent.relation_type == "3":  # Start to Finish
+            elif parent.type == "3":  # Start to Finish
                 if date_end:
                     todo_date_start = date_start - datetime.timedelta(
                         self.planned_duration - self.lag_time
