@@ -12,7 +12,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
 
     var GanttView = AbstractView.extend({
         viewType: 'dhxgantt',
-        groupable: false,
+        groupable: true,
         display_name: _lt('Gantt'),
         icon: 'fa-tasks',
         config: _.extend({}, AbstractView.prototype.config, {
@@ -28,6 +28,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.loadParams.type = 'list';
             this.loadParams.modelName = params.modelName;
             this.loadParams.linkModelName = this.arch.attrs.link_model_name;
+            this.loadParams.defaultGroupBy = this.arch.attrs.default_group_by;
             
             // Save fields names
             this.loadParams.identifier = this.arch.attrs.identifier;

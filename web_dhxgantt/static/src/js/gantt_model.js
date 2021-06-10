@@ -34,6 +34,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.map.project = params.project;
             this.map.owner = params.owner;
 
+            this.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
+
             return this._load(params);
         },
         reload: function (id, params) {
@@ -42,28 +44,69 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         _load: function (params) {
             var self = this;
             params = params ? params : {};
-            this.domain = params.domain || this.domain || [];
-            this.modelName = params.modelName || this.modelName;
-            return this._rpc({
+            self.domain = params.domain || self.domain || [];
+            self.modelName = params.modelName || self.modelName;
+            self.groupBy = self.defaultGroupBy;
+            if (params.groupBy && params.groupBy.length > 0) {
+                self.groupBy = params.groupBy;
+            }
+            return self._rpc({
                 model: self.modelName,
-                method: 'search_read',
-                fields: this.fieldNames,
+                method: 'read_group',
+                fields: self.fieldNames,
                 domain: self.domain,
+                groupBy: self.groupBy,
                 orderBy: [{
                     name: self.map.identifier,
                     asc: true,
-                }]
-            }).then(function (records) {
-                self.convertData(records);
+                }],
+                lazy: false,
+            }).then(function (groups) {
+                return self._rpc({
+                    model: self.modelName,
+                    method: 'search_read',
+                    fields: self.fieldNames.concat(self.groupBy),
+                    domain: self.domain,
+                }).then(function (records) {
+                    self.convertData(records, groups, self.groupBy);
+                });
             });
         },
-        convertData: function (records) {
+        convertData: function (records, groups, groupBy) {
             var data = [];
             var formatFunc = gantt.date.str_to_date("%Y-%m-%d %h:%i:%s", true);
             // todo: convert date from utc to mgt or wtever
             var self = this;
+
+            // Create projects from groups
+            groups.forEach(function (rec) {
+                let parentProject = null;
+                groupBy.forEach(function (field) {
+                    var project = {
+                        id: _.uniqueId('project-'),
+                        databaseID: rec[field][0],
+                        groupBy: {},
+                        text: rec[field][1],
+                        type: gantt.config.types.project,
+                        isProject: true,
+                        open: true,
+                        columnTitle: rec[field][1] + ' ' + field,
+                    }
+                    // Add current field to groupBy domain
+                    project.groupBy[field] = rec[field][0];
+                    if (parentProject) {
+                        project.groupBy = Object.assign({}, project.groupBy, parentProject.groupBy);
+                        project.parent = parentProject.id;
+                    }
+                    parentProject = project;
+                    data.push(project);
+                });
+            });
+
             this.res_ids = [];
             var links = [];
+
+            // Create tasks from records
             records.forEach(function (record) {
                 self.res_ids.push(record[self.map.identifier]);
                 // value.add(-self.getSession().getTZOffset(value), 'minutes')
@@ -76,25 +119,6 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 }
 
                 var task = {};
-                if (self.map.project) {
-                    var project = data.find(function (element) {
-                        return element.isProject && element.projectId == record[self.map.project][0];
-                    });
-                    if (!project) {
-                        // TODO: Add a post-process RPC to read project
-                        // progress data
-                        project = {
-                            id: _.uniqueId('project-'),
-                            projectId: record[self.map.project][0],
-                            text: record[self.map.project][1],
-                            type: gantt.config.types.project,
-                            isProject: true,
-                            open: true,
-                        }
-                        data.push(project);
-                    }
-                    task.parent = project.id;
-                }
                 task.id = record[self.map.identifier];
                 task.text = record[self.map.text];
                 task.type = gantt.config.types.type_task;
@@ -104,6 +128,29 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 task.progress = record[self.map.progress] / 100.0;
                 task.open = record[self.map.open];
                 task.links = record[self.map.links];
+                task.columnTitle = task.id;
+
+                // Retrieve and set parent from already created project/groups
+                var parent = data.find(function (element) {
+                    if ("groupBy" in element) {
+                        var matchNeeded = 0;
+                        var matchCount = 0;
+                        for (const [idx, field] of Object.entries(groupBy)) {
+                            if (field in record) {
+                                matchNeeded++;
+                                if (record[field][0] == element.groupBy[field]) {
+                                    matchCount++;
+                                }
+                            }
+                        }
+                        if (matchNeeded > 0 && matchNeeded == matchCount) {
+                            return element;
+                        }
+                    }
+                });
+                if (parent) {
+                    task.parent = parent.id;
+                }
 
                 data.push(task);
                 links.push.apply(links, JSON.parse(task.links))

@@ -30,7 +30,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // Note that `resize` is a PRO edition functionality
             gantt.config.columns = [
                 // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
-                { name: "id", label: "ID", tree: true, width: 110, min_width: 110 },
+                { name: "columnTitle", label: "Title", tree: true, width: 110, min_width: 110 },
                 { name: "start_date", align: "center", resize: true },
                 { name: "duration", label: "Dur.", align: "right", width: 40 },
                 { name: "owner", label: "Owner", align: "left", width: 200 },
