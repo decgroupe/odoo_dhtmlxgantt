@@ -112,27 +112,27 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             var links = [];
 
             // Create tasks from records
-            records.forEach(function (record) {
-                self.res_ids.push(record[self.map.identifier]);
+            records.forEach(function (rec) {
+                self.res_ids.push(rec[self.map.identifier]);
                 // value.add(-self.getSession().getTZOffset(value), 'minutes')
                 // data.timezone_offset = (-self.date_object.getTimezoneOffset());
                 var datetime;
-                if (record[self.map.date_start]) {
-                    datetime = formatFunc(record[self.map.date_start]);
+                if (rec[self.map.date_start]) {
+                    datetime = formatFunc(rec[self.map.date_start]);
                 } else {
                     datetime = false;
                 }
 
                 var task = {};
-                task.id = record[self.map.identifier];
-                task.text = record[self.map.text];
+                task.id = rec[self.map.identifier];
+                task.text = rec[self.map.text];
                 task.type = gantt.config.types.type_task;
                 task.start_date = datetime;
-                task.owner = record[self.map.owner][1];
-                task.duration = record[self.map.duration];
-                task.progress = record[self.map.progress] / 100.0;
-                task.open = record[self.map.open];
-                task.links = record[self.map.links];
+                task.owner = rec[self.map.owner][1];
+                task.duration = rec[self.map.duration];
+                task.progress = rec[self.map.progress] / 100.0;
+                task.open = rec[self.map.open];
+                task.links = rec[self.map.links];
                 task.columnTitle = task.id;
 
                 // Retrieve and set parent from already created project/groups
@@ -141,11 +141,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                         var matchNeeded = 0;
                         var matchCount = 0;
                         for (const [idx, field] of Object.entries(groupBy)) {
-                            if (field in record) {
+                            if (field in rec) {
                                 matchNeeded++;
-                                var value = record[field];
-                                if (Array.isArray(record[field])) {
-                                    value = record[field][0];
+                                var value = rec[field];
+                                if (Array.isArray(rec[field])) {
+                                    value = rec[field][0];
                                 }
                                 if (value == element.groupBy[field]) {
                                     matchCount++;
