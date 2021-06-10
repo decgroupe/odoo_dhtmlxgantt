@@ -23,8 +23,6 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
         init: function (viewInfo, params) {
             this._super.apply(this, arguments);
 
-            this.controllerParams.projectModelName = this.arch.attrs.project_model_name;
-
             this.loadParams.type = 'list';
             this.loadParams.fields = this.fields;
             this.loadParams.modelName = params.modelName;

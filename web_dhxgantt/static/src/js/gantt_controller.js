@@ -18,7 +18,6 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
         date_object: new Date(),
         init: function (parent, model, renderer, params) {
             this._super.apply(this, arguments);
-            this.projectModelName = params.projectModelName;
         },
         _onGanttCreateDataProcessor: function (event) {
             var self = this;
