@@ -84,16 +84,21 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 groupBy.forEach(function (field) {
                     var project = {
                         id: _.uniqueId('project-'),
-                        databaseID: rec[field][0],
                         groupBy: {},
-                        text: rec[field][1],
                         type: gantt.config.types.project,
                         isProject: true,
                         open: true,
-                        columnTitle: rec[field][1] + ' ' + field,
+                        columnTitle: field,
                     }
-                    // Add current field to groupBy domain
-                    project.groupBy[field] = rec[field][0];
+                    // Add current field value (raw or id) to groupBy domain
+                    if (Array.isArray(rec[field])) {
+                        project.groupBy[field] = rec[field][0];
+                        project.text = rec[field][1];
+                        project.columnTitle = rec[field][1] + ' ' + project.columnTitle;
+                    } else {
+                        project.groupBy[field] = rec[field];
+                        project.text = rec[field];
+                    }
                     if (parentProject) {
                         project.groupBy = Object.assign({}, project.groupBy, parentProject.groupBy);
                         project.parent = parentProject.id;
@@ -138,7 +143,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                         for (const [idx, field] of Object.entries(groupBy)) {
                             if (field in record) {
                                 matchNeeded++;
-                                if (record[field][0] == element.groupBy[field]) {
+                                var value = record[field];
+                                if (Array.isArray(record[field])) {
+                                    value = record[field][0];
+                                }
+                                if (value == element.groupBy[field]) {
                                     matchCount++;
                                 }
                             }
