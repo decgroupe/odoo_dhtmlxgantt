@@ -16,7 +16,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             'click button.o_dhx_show_workdays': '_onClickShowWorkdays',
             'click button.o_dhx_show_officehours': '_onClickShowOfficeHours',
             'click button.o_dhx_zoom_in': '_onClickZoomIn',
-            'click button.o_dhx_zoom_out': '_onClickZoomOut'
+            'click button.o_dhx_zoom_out': '_onClickZoomOut',
+            'click button.o_dhx_fullscreen': '_onClickFullscreen',
         }),
         init: function (parent, state, params) {
             this._super.apply(this, arguments);
@@ -26,6 +27,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.config.work_time = true;
             gantt.config.skip_off_time = false;
             gantt.config.drag_progress = params.drag_progress;
+            gantt.config.drag_project = true;
 
             // https://docs.dhtmlx.com/gantt/desktop__specifying_columns.html
             // Note that `resize` is a PRO edition functionality
@@ -246,13 +248,40 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this._updateIgnoreTime();
             gantt.render();
         },
+        _onClickFullscreen: function () {
+            if (!gantt.getState().fullscreen) {
+                // expanding the gantt to full screen
+                gantt.expand();
+            }
+            else {
+                // collapsing the gantt to the normal mode
+                gantt.collapse();
+            }
+        },
         on_attach_callback: function () {
             this.renderGantt();
         },
         renderGantt: function () {
-            var gantt_container = this.$('.o_dhx_gantt').get(0)
+            var gantt_root = this.$('.o_dhx_gantt_root').get(0);
+            var gantt_container = this.$('.o_dhx_gantt').get(0);
+            // Selector is not finding the `gantt_root` ! don't know why ...
+            if (!gantt_root) {
+                gantt_root = gantt_container.parentElement;
+            }
+            // https://docs.dhtmlx.com/gantt/desktop__extensions_list.html
             gantt.plugins({
-                marker: true
+                // https://docs.dhtmlx.com/gantt/desktop__markers.html
+                marker: true,
+                // https://docs.dhtmlx.com/gantt/api__gantt_drag_timeline_config.html
+                drag_timeline: true,
+                // https://docs.dhtmlx.com/gantt/desktop__multiselection.html
+                multiselect: true,
+                // https://docs.dhtmlx.com/gantt/desktop__quick_info.html
+                quick_info: false,
+                //https://docs.dhtmlx.com/gantt/desktop__tooltips.html
+                tooltip: true,
+                // https://docs.dhtmlx.com/gantt/desktop__fullscreen_mode.html
+                fullscreen: true,
             });
             this.trigger_up('gantt_config');
             this.trigger_up('gantt_create_dp');
@@ -281,6 +310,11 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             var context = this.getSession().user_context;
             var locale = context.lang.substring(0, 2) || 'en_US';
             gantt.i18n.setLocale(locale);
+
+
+            gantt.ext.fullscreen.getFullscreenElement = function () {
+                return gantt_root;
+            }
 
             gantt.init(gantt_container);
             gantt.parse(this.state.records);

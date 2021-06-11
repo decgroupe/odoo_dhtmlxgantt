@@ -13,6 +13,14 @@
                     </div>
 
                     <div class="o_dhx_button_right">
+                        <div class="btn-group btn-sm">
+                            <button type="button" class="btn btn-secondary o_dhx_fullscreen">
+                                <i class="fa fa-expand" role="img" aria-label="Full-screen" title="Full-screen"/>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="o_dhx_button_right">
                         Zoom:
                         <div class="btn-group btn-sm">
                             <button type="button" class="btn btn-secondary o_dhx_zoom_out">
