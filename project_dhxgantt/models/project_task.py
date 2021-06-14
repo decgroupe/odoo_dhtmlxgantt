@@ -38,6 +38,21 @@ class ProjectTask(models.Model):
         compute="_compute_links",
         help="Links serialized as JSON"
     )
+    gantt_class = fields.Char(
+        compute="_compute_gantt_class",
+        help="CSS class used to render this task in gantt view",
+    )
+
+    @api.depends('stage_id.gantt_class')
+    def _compute_gantt_class(self):
+        for rec in self:
+            rec.gantt_class = ''
+            if rec.stage_id and rec.stage_id.gantt_class:
+                css_name = rec.stage_id.gantt_class.replace(' ', '_').lower()
+                if css_name:
+                    rec.gantt_class = 'o_dhx_gantt_task_stage_{}'.format(
+                        css_name
+                    )
 
     @api.depends('upstream_task_ids')
     def _compute_recursive_upstream_task_ids(self):

@@ -178,6 +178,10 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 }
             };
 
+            gantt.templates.task_class = function (start, end, task) {
+                return task.task_class;
+            };
+
             // TODO: make this read from some database variable
             gantt.templates.timeline_cell_class = function (task, date) {
                 if (!gantt.isWorkTime({ task: task, date: date })) {

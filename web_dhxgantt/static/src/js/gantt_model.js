@@ -32,6 +32,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.map.links = params.links;
             this.map.project = params.project;
             this.map.owner = params.owner;
+            this.map.task_class = params.task_class;
 
             this.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
 
@@ -148,6 +149,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 task.progress = rec[self.map.progress] / 100.0;
                 task.open = rec[self.map.open];
                 task.links = rec[self.map.links];
+                task.task_class = rec[self.map.task_class];
                 task.columnTitle = task.id;
 
                 // Retrieve and set parent from already created project/groups

@@ -11,8 +11,10 @@
     'data':
         [
             'security/ir.model.access.csv',
-            'views/project.project.xml',
-            'views/project.task.xml',
+            'views/project_project.xml',
+            'views/project_task_type.xml',
+            'views/project_task.xml',
+            'views/assets.xml',
         ],
     'qweb': ["static/src/xml/gantt.xml", ],
     'uninstall_hook': 'uninstall_hook'
