@@ -43,7 +43,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             if ('groupBy' in params === false) {
                 params.groupBy = self.groupBy;
             }
-            return this._load(params);
+            return self._load(params);
         },
         _getFields: function () {
             var self = this;
@@ -124,7 +124,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 });
             });
 
-            this.res_ids = [];
+            self.res_ids = [];
             var links = [];
 
             // Create tasks from records
@@ -181,62 +181,66 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 data.push(task);
                 links.push.apply(links, JSON.parse(task.links))
             });
-            this.records = data;
-            this.links = links;
+            self.records = data;
+            self.links = links;
         },
         updateTask: function (data) {
+            var self = this;
             if (data.isGroup) {
                 return $.when();
             }
             var values = {};
-            values[this.text] = data.text;
-            values[this.duration] = data.duration;
-            values[this.open] = data.open;
-            values[this.progress] = data.progress;
+            values[self.map.text] = data.text;
+            values[self.map.duration] = data.duration;
+            values[self.map.open] = data.open;
+            values[self.map.progress] = data.progress;
 
             var formatFunc = gantt.date.str_to_date("%d-%m-%Y %h:%i");
             var date_start = formatFunc(data.start_date);
-            values[this.date_start] = JSON.stringify(date_start);
+            values[self.map.date_start] = JSON.stringify(date_start);
 
-            return this._rpc({
-                model: this.modelName,
+            return self._rpc({
+                model: self.modelName,
                 method: 'write',
                 args: [data.id, values],
             });
         },
         createLink: function (data) {
+            var self = this;
             var values = {};
             values.id = data.id;
             values.source_id = data.source;
             values.target_id = data.target;
             values.type = data.type;
 
-            return this._rpc({
-                model: this.linkModelName,
+            return self._rpc({
+                model: self.linkModelName,
                 method: 'create',
                 args: [[values]],
             });
         },
         deleteLink: function (data) {
-            return this._rpc({
-                model: this.linkModelName,
+            var self = this;
+            return self._rpc({
+                model: self.linkModelName,
                 method: 'unlink',
                 args: [data.id],
             });
         },
         getCriticalPath: function () {
-            return this._rpc({
-                model: this.modelName,
+            var self = this;
+            return self._rpc({
+                model: self.modelName,
                 method: 'compute_critical_path',
-                args: [this.res_ids],
+                args: [self.res_ids],
             });
         },
         schedule: function () {
             var self = this;
-            return this._rpc({
-                model: this.modelName,
+            return self._rpc({
+                model: self.modelName,
                 method: 'bf_traversal_schedule',
-                args: [this.res_ids],
+                args: [self.res_ids],
             });
         },
     });
