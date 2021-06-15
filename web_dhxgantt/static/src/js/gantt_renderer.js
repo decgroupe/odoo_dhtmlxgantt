@@ -136,10 +136,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                         scales: [
                             {
                                 unit: "week", step: 1, format: function (date) {
-                                    var dateToStr = gantt.date.date_to_str("%M");
-                                    var weekNum = gantt.date.date_to_str("%W")(date);
-                                    // return dateToStr(date) + " (W" + weekNum + ")";
-                                    return `${dateToStr(date)} (W${weekNum})`;
+                                    var month = gantt.date.date_to_str("%M")(date);
+                                    var week = gantt.date.date_to_str("%W")(date);
+                                    return month + " (" + _lt("Week#") + week + ")";
                                 }
                             },
                             {
@@ -158,7 +157,12 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                         min_column_width: 120,
                         scales: [
                             { unit: "month", format: "%F, %Y" },
-                            { unit: "week", format: "Week #%W" }
+                            {
+                                unit: "week", format: function (date) {
+                                    var dateToStr = gantt.date.date_to_str("%W")(date);
+                                    return _lt("Week") + " " + dateToStr;
+                                }
+                            }
                         ]
                     },
                     // quarters

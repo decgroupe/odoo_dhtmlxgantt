@@ -1,0 +1,198 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* web_dhxgantt
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 12.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-06-15 09:28+0000\n"
+"PO-Revision-Date: 2021-06-15 11:28+0200\n"
+"Last-Translator: <>\n"
+"Language-Team: \n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: \n"
+"X-Generator: Poedit 2.4.3\n"
+
+#. module: web_dhxgantt
+#: model:ir.model,name:web_dhxgantt.model_ir_actions_act_window_view
+msgid "Action Window View"
+msgstr "Vue de la Fenêtre d'Action"
+
+#. module: web_dhxgantt
+#: selection:ir.actions.act_window.view,view_mode:0 selection:ir.ui.view,type:0
+msgid "Activity"
+msgstr "Activité"
+
+#. module: web_dhxgantt
+#: selection:ir.actions.act_window.view,view_mode:0 selection:ir.ui.view,type:0
+msgid "Calendar"
+msgstr "Calendrier"
+
+#. module: web_dhxgantt
+#: selection:ir.ui.view,type:0
+msgid "Diagram"
+msgstr "Diagramme"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:36
+#, python-format
+msgid "Display:"
+msgstr "Afficher :"
+
+#. module: web_dhxgantt
+#: selection:ir.actions.act_window.view,view_mode:0 selection:ir.ui.view,type:0
+msgid "Form"
+msgstr "Formulaire"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:18
+#, python-format
+msgid "Full-screen"
+msgstr "Plein écran"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/js/gantt_view.js:16
+#: selection:ir.actions.act_window.view,view_mode:0 selection:ir.ui.view,type:0
+#, python-format
+msgid "Gantt"
+msgstr "Gantt"
+
+#. module: web_dhxgantt
+#: selection:ir.actions.act_window.view,view_mode:0 selection:ir.ui.view,type:0
+msgid "Gantt (DHX)"
+msgstr "Gantt (DHX)"
+
+#. module: web_dhxgantt
+#: selection:ir.actions.act_window.view,view_mode:0 selection:ir.ui.view,type:0
+msgid "Graph"
+msgstr "Graphique"
+
+#. module: web_dhxgantt
+#: selection:ir.actions.act_window.view,view_mode:0 selection:ir.ui.view,type:0
+msgid "Kanban"
+msgstr "Kanban"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:47
+#, python-format
+msgid "Office Hours"
+msgstr "Horaires de travail"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/js/gantt_controller.js:104
+#, python-format
+msgid "Open: "
+msgstr "Ouvrir : "
+
+#. module: web_dhxgantt
+#: selection:ir.actions.act_window.view,view_mode:0 selection:ir.ui.view,type:0
+msgid "Pivot"
+msgstr "Tableau croisé dynamique"
+
+#. module: web_dhxgantt
+#: selection:ir.ui.view,type:0
+msgid "QWeb"
+msgstr "QWeb"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:12
+#, python-format
+msgid "Reschedule"
+msgstr "Replanifier"
+
+#. module: web_dhxgantt
+#: selection:ir.ui.view,type:0
+msgid "Search"
+msgstr "Rechercher"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:39
+#, python-format
+msgid "Show All"
+msgstr "Tout"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:11
+#, python-format
+msgid "Show Critical Path"
+msgstr "Afficher le chemin critique"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:374
+#, python-format
+msgid "Today"
+msgstr "Aujourd'hui"
+
+#. module: web_dhxgantt
+#: selection:ir.actions.act_window.view,view_mode:0 selection:ir.ui.view,type:0
+msgid "Tree"
+msgstr "Arborescence"
+
+#. module: web_dhxgantt
+#: model:ir.model,name:web_dhxgantt.model_ir_ui_view
+msgid "View"
+msgstr "Vue"
+
+#. module: web_dhxgantt
+#: model:ir.model.fields,field_description:web_dhxgantt.field_ir_actions_act_window_view__view_mode
+#: model:ir.model.fields,field_description:web_dhxgantt.field_ir_ui_view__type
+msgid "View Type"
+msgstr "Type de Vue"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:163
+#, python-format
+msgid "Week"
+msgstr "Semaine"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:141
+#, python-format
+msgid "Week#"
+msgstr "S"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:43
+#, python-format
+msgid "Workdays"
+msgstr "Jours ouvrables"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:30
+#, python-format
+msgid "Zoom In"
+msgstr "Agrandir"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:27
+#, python-format
+msgid "Zoom Out"
+msgstr "Réduire"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/xml/gantt.xml:23
+#, python-format
+msgid "Zoom:"
+msgstr "Zoom:"
+
+#~ msgid "All"
+#~ msgstr "Tous"
