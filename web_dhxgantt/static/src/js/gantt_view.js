@@ -34,6 +34,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.loadParams.project = this.arch.attrs.project;
             this.loadParams.owner = this.arch.attrs.owner;
             this.loadParams.date_start = this.arch.attrs.date_start;
+            this.loadParams.date_end = this.arch.attrs.date_end;
             this.loadParams.duration = this.arch.attrs.duration;
             this.loadParams.open = this.arch.attrs.open;
             this.loadParams.progress = this.arch.attrs.progress;

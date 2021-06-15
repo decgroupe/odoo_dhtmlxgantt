@@ -26,6 +26,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.map.identifier = params.identifier;
             this.map.text = params.text;
             this.map.date_start = params.date_start;
+            this.map.date_end = params.date_end;
             this.map.duration = params.duration;
             this.map.progress = params.progress;
             this.map.open = params.open;
@@ -47,7 +48,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         },
         _getFields: function () {
             var self = this;
-            var values = Object.keys(self.map).map(function(key){
+            var values = Object.keys(self.map).map(function (key) {
                 return self.map[key];
             });
             return values;
@@ -132,25 +133,40 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 self.res_ids.push(rec[self.map.identifier]);
                 // value.add(-self.getSession().getTZOffset(value), 'minutes')
                 // data.timezone_offset = (-self.date_object.getTimezoneOffset());
-                var datetime;
+                var start_date;
                 if (rec[self.map.date_start]) {
-                    datetime = formatFunc(rec[self.map.date_start]);
+                    start_date = formatFunc(rec[self.map.date_start]);
                 } else {
-                    datetime = false;
+                    start_date = false;
+                }
+
+                var end_date;
+                if (rec[self.map.date_end]) {
+                    end_date = formatFunc(rec[self.map.date_end]);
+                } else {
+                    end_date = false;
                 }
 
                 var task = {};
                 task.id = rec[self.map.identifier];
                 task.text = rec[self.map.text];
                 task.type = gantt.config.types.type_task;
-                task.start_date = datetime;
+                task.start_date = start_date;
+                task.end_date = end_date;
                 task.owner = rec[self.map.owner][1];
-                task.duration = rec[self.map.duration];
                 task.progress = rec[self.map.progress] / 100.0;
                 task.open = rec[self.map.open];
                 task.links = rec[self.map.links];
                 task.task_class = rec[self.map.task_class];
                 task.columnTitle = task.id;
+
+                if (gantt.config.duration_unit == "minute") {
+                    task.duration = rec[self.map.duration];
+                } else if (gantt.config.duration_unit == "hour") {
+                    task.duration = rec[self.map.duration] / 60;
+                } else if (gantt.config.duration_unit == "day") {
+                    task.duration = rec[self.map.duration] / 60 / 7;
+                }
 
                 // Retrieve and set parent from already created project/groups
                 var parent = data.find(function (element) {
@@ -191,13 +207,22 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             }
             var values = {};
             values[self.map.text] = data.text;
-            values[self.map.duration] = data.duration;
             values[self.map.open] = data.open;
             values[self.map.progress] = data.progress;
 
+            if (gantt.config.duration_unit == "minute") {
+                values[self.map.duration] = data.duration;
+            } else if (gantt.config.duration_unit == "hour") {
+                values[self.map.duration] = data.duration * 60;
+            } else if (gantt.config.duration_unit == "day") {
+                values[self.map.duration] = data.duration * 60 * 7;
+            }
+
             var formatFunc = gantt.date.str_to_date("%d-%m-%Y %h:%i");
             var date_start = formatFunc(data.start_date);
+            var date_end = formatFunc(data.end_date);
             values[self.map.date_start] = JSON.stringify(date_start);
+            values[self.map.date_end] = JSON.stringify(date_end);
 
             return self._rpc({
                 model: self.modelName,

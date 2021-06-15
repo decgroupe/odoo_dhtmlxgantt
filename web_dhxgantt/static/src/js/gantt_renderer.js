@@ -24,6 +24,10 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this.modelName = params.modelName;
             this.fieldsViewInfo = params.fieldsViewInfo;
 
+            this.showOnlyWorkdays = true;
+            this.showOnlyOfficeHours = true;
+
+            gantt.config.min_column_width = 20;
             gantt.config.work_time = true;
             gantt.config.skip_off_time = false;
             gantt.config.drag_progress = params.drag_progress;
@@ -80,49 +84,71 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             };
 
             var zoomConfig = {
+                maxColumnWidth: 50,
                 levels: [
                     // hours
                     {
-                        name: "hour_24",
+                        name: "hour",
                         scale_height: 50,
+                        min_column_width: 40,
                         scales: [
-                            { unit: "day", step: 1, format: "%d %M" },
-                            { unit: "hour", step: 1, format: "%H:%i" },
-                        ]
-                    },
-                    // hours
-                    {
-                        name: "hour_6",
-                        scale_height: 50,
-                        scales: [
-                            { unit: "day", step: 1, format: "%d %M" },
-                            { unit: "hour", step: 4, format: "%H:%i" },
+                            {
+                                unit: "day", step: 1, format: "%d %M", css: function (date) {
+                                    if (!gantt.isWorkTime({ date: date, unit: "day" })) {
+                                        return "o_dhx_gantt_weekend"
+                                    }
+                                }
+                            },
+                            {
+                                unit: "hour", step: 1, format: "%H", css: function (date) {
+                                    if (!gantt.isWorkTime({ date: date, unit: "hour" })) {
+                                        return "o_dhx_gantt_hourleaves"
+                                    }
+                                }
+                            },
                         ]
                     },
                     // days
                     {
                         name: "day",
                         scale_height: 50,
-                        min_column_width: 80,
+                        min_column_width: 60,
                         scales: [
-                            { unit: "day", step: 1, format: "%d %M" }
+                            {
+                                unit: "month", step: 1, format: "%M", css: function (date) {
+                                    return "";
+                                },
+                            },
+                            {
+                                unit: "day", step: 1, format: "%j %D", css: function (date) {
+                                    if (!gantt.isWorkTime({ date: date, unit: "day" })) {
+                                        return "o_dhx_gantt_weekend"
+                                    }
+                                }
+                            },
                         ]
                     },
                     // weeks
                     {
                         name: "week",
                         scale_height: 50,
-                        min_column_width: 50,
+                        min_column_width: 40,
                         scales: [
                             {
                                 unit: "week", step: 1, format: function (date) {
-                                    var dateToStr = gantt.date.date_to_str("%d %M");
-                                    var endDate = gantt.date.add(date, +6, "day");
+                                    var dateToStr = gantt.date.date_to_str("%M");
                                     var weekNum = gantt.date.date_to_str("%W")(date);
-                                    return "#" + weekNum + ", " + dateToStr(date) + " - " + dateToStr(endDate);
+                                    // return dateToStr(date) + " (W" + weekNum + ")";
+                                    return `${dateToStr(date)} (W${weekNum})`;
                                 }
                             },
-                            { unit: "day", step: 1, format: "%j %D" }
+                            {
+                                unit: "day", step: 1, format: "%d", css: function (date) {
+                                    if (!gantt.isWorkTime({ date: date, unit: "day" })) {
+                                        return "o_dhx_gantt_weekend"
+                                    }
+                                }
+                            }
                         ]
                     },
                     // months
@@ -168,52 +194,86 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // TODO: make this read from some database variable
             gantt.setWorkTime({ day: 6, hours: false });
             gantt.setWorkTime({ day: 7, hours: false });
-            // gantt.setWorkTime({ hours: [8, 17] });
             gantt.setWorkTime({ hours: ["8:30-12:00", "13:30-17:00"] }); //global working hours
-
-            // TODO: make this read from some database variable
-            gantt.templates.scale_cell_class = function (date) {
-                if (!gantt.isWorkTime(date)) {
-                    return "o_dhx_gantt_weekend";
-                }
-            };
 
             gantt.templates.task_class = function (start, end, task) {
                 return task.task_class;
             };
 
-            // TODO: make this read from some database variable
-            gantt.templates.timeline_cell_class = function (task, date) {
-                if (!gantt.isWorkTime({ task: task, date: date })) {
-                    return "o_dhx_gantt_weekend";
-                }
+            // https://docs.dhtmlx.com/gantt/api__gantt_rightside_text_template.html
+            // specifies the text assigned to tasks bars on the right side
+            gantt.templates.rightside_text = function (start, end, task) {
+                return task.duration + " " + gantt.config.duration_unit + "(s)";
             };
+
             this._updateIgnoreTime();
+
+            /*
+                        // TODO: make this read from some database variable
+                        // https://docs.dhtmlx.com/gantt/api__gantt_scale_cell_class_template.html
+                        gantt.templates.scale_cell_class = function (date) {
+                            if (!gantt.isWorkTime(date)) {
+                                return "o_dhx_gantt_weekend";
+                            }
+                        };
+            
+                        // TODO: make this read from some database variable
+                        gantt.templates.timeline_cell_class = function (task, date) {
+                            // if (gantt.ignore_time && gantt.ignore_time(date)) {
+                            //     return "o_dhx_gantt_weekend";
+                            // }
+                        };
+            */
         },
         _updateIgnoreTime: function (level) {
+
+            var self = this;
             if (level == null) {
                 level = gantt.ext.zoom.getCurrentLevel();
             }
 
-            var hour24 = gantt.ext.zoom._getZoomIndexByName("hour_24")
-            var hour6 = gantt.ext.zoom._getZoomIndexByName("hour_6")
+            var hour = gantt.ext.zoom._getZoomIndexByName("hour")
             var day = gantt.ext.zoom._getZoomIndexByName("day")
             var week = gantt.ext.zoom._getZoomIndexByName("week")
             var month = gantt.ext.zoom._getZoomIndexByName("month")
             var quarter = gantt.ext.zoom._getZoomIndexByName("quarter")
             var year = gantt.ext.zoom._getZoomIndexByName("year")
 
-            if (level == hour6 || level == hour24) {
+            // https://docs.dhtmlx.com/gantt/api__gantt_duration_unit_config.html
+            if (level == hour) {
+                gantt.config.duration_unit = "minute";
+                gantt.config.duration_step = 1;
+            } else {
+                gantt.config.duration_unit = "day";
+                gantt.config.duration_step = 1;
+            }
+
+            // https://docs.dhtmlx.com/gantt/api__gantt_time_step_config.html
+            // sets the minimum step (in minutes) for the task's time values
+            if (level == hour) {
+                gantt.config.time_step = 30;
+            } else {
+                gantt.config.time_step = 60;
+            }
+            // https://docs.dhtmlx.com/gantt/api__gantt_round_dnd_dates_config.html
+            // enables rounding the task's start and end dates to the nearest scale marks
+            gantt.config.round_dnd_dates = (level != hour);
+
+            if (level == hour) {
                 gantt.ignore_time = function (date) {
-                    if (date.getHours() < 8 || date.getHours() > 17) {
-                        return true;
-                    } else {
-                        return !gantt.isWorkTime(date, "day");
+                    var res = true;
+                    if (self.showOnlyOfficeHours) {
+                        res = gantt.isWorkTime(date, "hour");
                     }
+                    return !res;
                 }
             } else if (level == day || level == week || level == month) {
                 gantt.ignore_time = function (date) {
-                    return !gantt.isWorkTime(date, "day");
+                    var res = true;
+                    if (self.showOnlyWorkdays) {
+                        res = gantt.isWorkTime(date, "day");
+                    }
+                    return !res;
                 }
             } else if (level == quarter || level == year) {
                 gantt.ignore_time = null;
@@ -229,16 +289,20 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this.trigger_up('gantt_schedule');
         },
         _onClickShowAll: function () {
-            gantt.ignore_time = null;
+            this.showOnlyWorkdays = false;
+            this.showOnlyOfficeHours = false;
+            this._updateIgnoreTime();
             gantt.render();
         },
         _onClickShowWorkdays: function () {
+            this.showOnlyWorkdays = true;
             gantt.ext.zoom.setLevel("week");
             this._updateIgnoreTime();
             gantt.render();
         },
         _onClickShowOfficeHours: function () {
-            gantt.ext.zoom.setLevel("hour_24");
+            this.showOnlyOfficeHours = true;
+            gantt.ext.zoom.setLevel("hour");
             this._updateIgnoreTime();
             gantt.render();
         },
@@ -314,7 +378,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             var context = this.getSession().user_context;
             var locale = context.lang.substring(0, 2) || 'en_US';
             gantt.i18n.setLocale(locale);
-
 
             gantt.ext.fullscreen.getFullscreenElement = function () {
                 return gantt_root;

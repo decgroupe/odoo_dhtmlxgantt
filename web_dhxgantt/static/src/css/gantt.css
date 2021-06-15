@@ -36,5 +36,9 @@
     margin-bottom:4px;
 }
 .o_dhx_gantt_weekend{
-    background: #f4f7f4 !important;
+    background: #d7aed1 !important;
+}
+.o_dhx_gantt_hourleaves{
+    background: #f1f1f1 !important;
+    color: gray !important;
 }
