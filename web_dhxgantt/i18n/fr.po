@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-06-15 09:28+0000\n"
-"PO-Revision-Date: 2021-06-15 11:28+0200\n"
+"POT-Creation-Date: 2021-06-15 14:01+0000\n"
+"PO-Revision-Date: 2021-06-17 09:42+0200\n"
 "Last-Translator: <>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -16,6 +16,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: \n"
 "X-Generator: Poedit 2.4.3\n"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:223
+#, python-format
+msgid " day(s)"
+msgstr " jour(s)"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:226
+#, python-format
+msgid " hour(s)"
+msgstr " heure(s)"
+
+#. module: web_dhxgantt
+#. openerp-web
+#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:229
+#, python-format
+msgid " minute(s)"
+msgstr " minute(s)"
 
 #. module: web_dhxgantt
 #: model:ir.model,name:web_dhxgantt.model_ir_actions_act_window_view
@@ -88,7 +109,7 @@ msgstr "Horaires de travail"
 
 #. module: web_dhxgantt
 #. openerp-web
-#: code:addons/web_dhxgantt/static/src/js/gantt_controller.js:104
+#: code:addons/web_dhxgantt/static/src/js/gantt_controller.js:105
 #, python-format
 msgid "Open: "
 msgstr "Ouvrir : "
@@ -131,7 +152,7 @@ msgstr "Afficher le chemin critique"
 
 #. module: web_dhxgantt
 #. openerp-web
-#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:374
+#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:416
 #, python-format
 msgid "Today"
 msgstr "Aujourd'hui"
@@ -154,14 +175,14 @@ msgstr "Type de Vue"
 
 #. module: web_dhxgantt
 #. openerp-web
-#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:163
+#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:166
 #, python-format
 msgid "Week"
 msgstr "Semaine"
 
 #. module: web_dhxgantt
 #. openerp-web
-#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:141
+#: code:addons/web_dhxgantt/static/src/js/gantt_renderer.js:144
 #, python-format
 msgid "Week#"
 msgstr "S"

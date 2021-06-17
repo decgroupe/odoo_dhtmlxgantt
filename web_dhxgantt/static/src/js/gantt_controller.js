@@ -14,6 +14,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             gantt_config: '_onGanttConfig',
             gantt_show_critical_path: '_onShowCriticalPath',
             gantt_schedule: '_onGanttSchedule',
+            gantt_reload: '_onGanttReload',
         }),
         date_object: new Date(),
         init: function (parent, model, renderer, params) {
@@ -46,6 +47,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                             switch (entity) {
                                 case "link":
                                     self.model.createLink(data).then(function (res) {
+                                        self.update({});
                                         // set res.id as the id returned from 
                                         // the server to update client id
                                         res.id = res[0];
@@ -167,6 +169,10 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 self.update({ reload: true });
                 self.renderer.renderGantt();
             });
+        },
+        _onGanttReload: function () {
+            var self = this;
+            self.update({ reload: true });
         },
     });
     return GanttController;

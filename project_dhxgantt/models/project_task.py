@@ -15,7 +15,7 @@ class ProjectTask(models.Model):
 
     planned_duration = fields.Integer(
         'Duration',
-        default=7,
+        default=420,
     )
     lag_time = fields.Integer('Lag Time')
     downstream_task_ids = fields.One2many(
@@ -42,6 +42,65 @@ class ProjectTask(models.Model):
         compute="_compute_gantt_class",
         help="CSS class used to render this task in gantt view",
     )
+
+    @api.multi
+    def write(self, vals):
+        res = super().write(vals)
+        if not 'gantt_scheduling' in self.env.context:
+            if vals.get('date_start') \
+            or vals.get('date_stop') \
+            or vals.get('planned_duration'):
+                self.with_context(gantt_scheduling=True).update_gantt_schedule()
+        return res
+
+    def _get_calendar_id(self):
+        if self.user_id and self.user_id.employee_ids and self.user_id.employee_ids[
+            0].resource_calendar_id:
+            return self.user_id.employee_ids[0].resource_calendar_id
+        elif self.project_id and self.project_id.resource_calendar_id:
+            return self.project_id.resource_calendar_id
+        elif self.env.user.company_id and self.env.user.company_id.resource_calendar_id:
+            return self.env.user.company_id.resource_calendar_id
+        return False
+
+    @api.multi
+    def plan(self, calendar_id, planned_duration, date_start):
+        self.ensure_one()
+        if not date_start:
+            raise Exception('Missing starting date')
+        date_end = calendar_id.plan_minutes(planned_duration, date_start)
+        if not date_end:
+            raise Exception(
+                'Invalid ending date when planning from {} with '
+                'a duration of {}'.format(date_start, planned_duration)
+            )
+        return date_end
+
+    @api.multi
+    def update_gantt_schedule(self):
+        self.ensure_one()
+        snap = self.env.context.get('gantt_duration_unit') == 'day'
+        calendar_id = self._get_calendar_id()
+        # Snap to day limits when gantt view is day, week, month, etc.
+        if snap and calendar_id.is_before_worktime(self.date_start):
+            self.date_start = calendar_id.snap_to_day_start(self.date_start)
+        # Use calendar planning to compute an ending date
+        self.date_end = self.plan(
+            calendar_id, self.planned_duration, self.date_start
+        )
+        # Snap to day limits when gantt view is day, week, month, etc.
+        if snap and calendar_id.is_after_worktime(self.date_end):
+            self.date_end = calendar_id.snap_to_day_end(self.date_end)
+        _logger.info(
+            '[{}] >> start={} end={} using CALENDAR {}'.format(
+                self.name, self.date_start, self.date_end, calendar_id.name
+            )
+        )
+        # Operate same logic on all downstream tasks
+        for link_id in self.downstream_task_ids:
+            task_id = link_id.target_id
+            task_id.date_start = self.date_end
+            task_id.update_gantt_schedule()
 
     @api.depends('stage_id.gantt_class')
     def _compute_gantt_class(self):

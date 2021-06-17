@@ -9,7 +9,10 @@
     'website': "https://github.com/ypapouin/odoo_dhtmlxgantt",
     'license': "GPL-3",
     'category': 'Project Management',
-    'depends': ['base'],
+    'depends': [
+        'base',
+        'resource',
+    ],
     'data': ['views/assets.xml', ],
     'qweb': ["static/src/xml/gantt.xml", ],
 }

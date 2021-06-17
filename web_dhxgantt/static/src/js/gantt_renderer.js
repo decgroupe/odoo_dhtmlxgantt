@@ -21,9 +21,12 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         }),
         init: function (parent, state, params) {
             this._super.apply(this, arguments);
+            var self = this;
+
             this.modelName = params.modelName;
             this.fieldsViewInfo = params.fieldsViewInfo;
 
+            this.hoursPerDay = 7;
             this.showOnlyWorkdays = true;
             this.showOnlyOfficeHours = true;
 
@@ -207,7 +210,25 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // https://docs.dhtmlx.com/gantt/api__gantt_rightside_text_template.html
             // specifies the text assigned to tasks bars on the right side
             gantt.templates.rightside_text = function (start, end, task) {
-                return task.duration + " " + gantt.config.duration_unit + "(s)";
+                var duration = task.duration;
+                if (gantt.config.duration_unit == "day") {
+                    duration = duration * 60 * self.hoursPerDay;
+                }
+                var days = Math.floor(duration / self.hoursPerDay / 60);
+                var hours = Math.floor(duration / 60 % self.hoursPerDay);
+                var minutes = Math.round(duration % 60);
+
+                var res = "";
+                if (days > 0) {
+                    res += " "+ days + _lt(" day(s)");
+                }
+                if (hours > 0) {
+                    res += " "+ hours + _lt(" hour(s)");
+                }
+                if (minutes > 0) {
+                    res += " "+ minutes + _lt(" minute(s)");
+                }
+                return res.trim();
             };
 
             this._updateIgnoreTime();
@@ -244,12 +265,33 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             var year = gantt.ext.zoom._getZoomIndexByName("year")
 
             // https://docs.dhtmlx.com/gantt/api__gantt_duration_unit_config.html
+            var duration_unit = gantt.config.duration_unit;
+            var ratio = 1;
+            var mode = "";
             if (level == hour) {
                 gantt.config.duration_unit = "minute";
                 gantt.config.duration_step = 1;
+                if (duration_unit == "day") {
+                    mode = "multiply";
+                    ratio = 60 * self.hoursPerDay;
+                }
             } else {
                 gantt.config.duration_unit = "day";
                 gantt.config.duration_step = 1;
+                if (duration_unit == "minute") {
+                    mode = "divide";
+                    ratio = 60 * self.hoursPerDay;
+                }
+            }
+            // Update duration to reflect new `duration_unit`
+            if (ratio != 1) {
+                for (const [id, task] of Object.entries(gantt.$data.tasksStore.pull)) {
+                    if (mode == "multiply") {
+                        task.duration = task.duration * ratio;
+                    } else if (mode == "divide") {
+                        task.duration = task.duration / ratio;
+                    };
+                }
             }
 
             // https://docs.dhtmlx.com/gantt/api__gantt_time_step_config.html

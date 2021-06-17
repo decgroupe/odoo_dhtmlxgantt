@@ -57,3 +57,9 @@ class ProjectTaskLink(models.Model):
             rec.name = '{} ({}) 🠢 {} ({})'.format(
                 rec.source_id.name, left, rec.target_id.name, right
             )
+
+    @api.model
+    def create(self, vals):
+        rec = super().create(vals)
+        rec.source_id.update_gantt_schedule()
+        return rec

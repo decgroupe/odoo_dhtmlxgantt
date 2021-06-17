@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: Odoo Server 12.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-06-15 09:28+0000\n"
-"PO-Revision-Date: 2021-06-15 11:22+0200\n"
+"PO-Revision-Date: 2021-06-17 09:43+0200\n"
 "Last-Translator: <>\n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -20,12 +20,12 @@ msgstr ""
 #. module: project_dhxgantt
 #: model:ir.model.fields,help:project_dhxgantt.field_project_task_type__gantt_class
 msgid "CSS class used to render tasks in gantt view"
-msgstr ""
+msgstr "Classe CSS utilisée pour le rendu des tâches en mode Gantt"
 
 #. module: project_dhxgantt
 #: model:ir.model.fields,help:project_dhxgantt.field_project_task__gantt_class
 msgid "CSS class used to render this task in gantt view"
-msgstr ""
+msgstr "Classe CSS utilisée pour le rendu de cette tâche en mode Gantt"
 
 #. module: project_dhxgantt
 #: selection:project.task.link,state:0
@@ -86,12 +86,12 @@ msgstr "Fin à début"
 #: model:ir.model.fields,field_description:project_dhxgantt.field_project_task__gantt_class
 #: model:ir.model.fields,field_description:project_dhxgantt.field_project_task_type__gantt_class
 msgid "Gantt Class"
-msgstr ""
+msgstr "Classe Gantt"
 
 #. module: project_dhxgantt
 #: model_terms:ir.ui.view,arch_db:project_dhxgantt.view_task_gantt_data_form
 msgid "Gantt Info"
-msgstr ""
+msgstr "Infos Gantt"
 
 #. module: project_dhxgantt
 #: model:ir.model.fields,field_description:project_dhxgantt.field_project_task_link__id
@@ -126,7 +126,7 @@ msgstr "Liens"
 #. module: project_dhxgantt
 #: model:ir.model.fields,help:project_dhxgantt.field_project_task__links
 msgid "Links serialized as JSON"
-msgstr ""
+msgstr "Liens sérialisés au format JSON"
 
 #. module: project_dhxgantt
 #: model:ir.model.fields,field_description:project_dhxgantt.field_project_task_link__name
@@ -146,7 +146,7 @@ msgstr "Projet"
 #. module: project_dhxgantt
 #: model:ir.actions.client,name:project_dhxgantt.action_project_show_gantt
 msgid "Project Gantt"
-msgstr ""
+msgstr "Projet Gantt"
 
 #. module: project_dhxgantt
 #: model:ir.model.fields,field_description:project_dhxgantt.field_project_task__recursive_upstream_task_ids
@@ -191,7 +191,7 @@ msgstr "Tâche"
 #. module: project_dhxgantt
 #: model:ir.model,name:project_dhxgantt.model_project_task_link
 msgid "Task Link"
-msgstr ""
+msgstr "Lien entre tâches"
 
 #. module: project_dhxgantt
 #: model:ir.model,name:project_dhxgantt.model_project_task_type
@@ -201,17 +201,17 @@ msgstr "Étape de la tâche"
 #. module: project_dhxgantt
 #: model:ir.model.fields,help:project_dhxgantt.field_project_task__upstream_task_ids
 msgid "Tasks on which this task depends."
-msgstr ""
+msgstr "Tâches dont dépend cette tâche."
 
 #. module: project_dhxgantt
 #: model:ir.model.fields,help:project_dhxgantt.field_project_task__downstream_task_ids
 msgid "Tasks that depend on this task."
-msgstr ""
+msgstr "Tâches qui dépendent de cette tâche."
 
 #. module: project_dhxgantt
 #: sql_constraint:project.task.link:0
 msgid "Two tasks can only have one relationship!"
-msgstr ""
+msgstr "Deux tâches ne peuvent avoir qu’une seule relation !"
 
 #. module: project_dhxgantt
 #: model:ir.model.fields,field_description:project_dhxgantt.field_project_task_link__type

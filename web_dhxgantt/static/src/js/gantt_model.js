@@ -228,6 +228,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 model: self.modelName,
                 method: 'write',
                 args: [data.id, values],
+                context: self.getContext(),
             });
         },
         createLink: function (data) {
@@ -242,6 +243,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 model: self.linkModelName,
                 method: 'create',
                 args: [[values]],
+                context: self.getContext(),
             });
         },
         deleteLink: function (data) {
@@ -250,6 +252,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 model: self.linkModelName,
                 method: 'unlink',
                 args: [data.id],
+                context: self.getContext(),
             });
         },
         getCriticalPath: function () {
@@ -267,6 +270,9 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 method: 'bf_traversal_schedule',
                 args: [self.res_ids],
             });
+        },
+        getContext: function () {
+            return { 'gantt_duration_unit': gantt.config.duration_unit }
         },
     });
     return GanttModel;
