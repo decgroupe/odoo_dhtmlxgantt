@@ -46,11 +46,6 @@ class ProjectTask(models.Model):
     @api.multi
     def write(self, vals):
         res = super().write(vals)
-        if not 'gantt_scheduling' in self.env.context:
-            if vals.get('date_start') \
-            or vals.get('date_stop') \
-            or vals.get('planned_duration'):
-                self.with_context(gantt_scheduling=True).update_gantt_schedule()
         return res
 
     def _get_calendar_id(self):
@@ -78,7 +73,17 @@ class ProjectTask(models.Model):
 
     @api.multi
     def update_gantt_schedule(self):
+        res = []
+        if not 'gantt_scheduling' in self.env.context:
+            for rec in self:
+                res += rec.with_context(gantt_scheduling=True
+                                       )._update_gantt_schedule()
+        return res
+
+    @api.multi
+    def _update_gantt_schedule(self):
         self.ensure_one()
+        res = [self.id]
         snap = self.env.context.get('gantt_duration_unit') == 'day'
         calendar_id = self._get_calendar_id()
         # Snap to day limits when gantt view is day, week, month, etc.
@@ -100,7 +105,8 @@ class ProjectTask(models.Model):
         for link_id in self.downstream_task_ids:
             task_id = link_id.target_id
             task_id.date_start = self.date_end
-            task_id.update_gantt_schedule()
+            res += task_id._update_gantt_schedule()
+        return res
 
     @api.depends('stage_id.gantt_class')
     def _compute_gantt_class(self):
@@ -138,6 +144,7 @@ class ProjectTask(models.Model):
             for link in r.upstream_task_ids:
                 json_obj = {
                     'id': link.id,
+                    'databaseId': link.id,
                     'source': link.source_id.id,
                     'target': link.target_id.id,
                     'type': link.type

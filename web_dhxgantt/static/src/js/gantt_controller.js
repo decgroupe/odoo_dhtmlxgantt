@@ -32,9 +32,11 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                         return new gantt.Promise(function (resolve, reject) {
                             switch (entity) {
                                 case "task":
-                                    self.model.updateTask(data).then(function (res) {
-                                        resolve(res.result);
-                                        // Do not update to avoid a task "jump" effect: self.update({});
+                                    self.model.writeTask(data).then(function (ids) {
+                                        self.model.reloadTaskDates(ids).then(function () {
+                                            gantt.render();
+                                        });
+                                        resolve(true);
                                     }, function (res) {
                                         resolve({ state: "error" });
                                         self.update({});
@@ -46,12 +48,11 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                         return new gantt.Promise(function (resolve, reject) {
                             switch (entity) {
                                 case "link":
-                                    self.model.createLink(data).then(function (res) {
-                                        self.update({});
-                                        // set res.id as the id returned from 
-                                        // the server to update client id
-                                        res.id = res[0];
-                                        resolve(res);
+                                    self.model.createLink(data).then(function (ids) {
+                                        self.model.reloadTaskDates(ids).then(function () {
+                                            gantt.render();
+                                        });
+                                        resolve(true);
                                     }, function (res) {
                                         resolve({ state: "error" });
                                         gantt.deleteLink(data.id);

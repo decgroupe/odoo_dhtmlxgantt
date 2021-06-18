@@ -53,6 +53,13 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             });
             return values;
         },
+        _getDateFields: function () {
+            var self = this;
+            return [
+                this.map.date_start,
+                self.map.date_end,
+            ]
+        },
         _load: function (params) {
             var self = this;
             params = params ? params : {};
@@ -84,9 +91,18 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 });
             });
         },
+        parseDate(rec, date_name) {
+            var formatFunc = gantt.date.str_to_date("%Y-%m-%d %h:%i:%s", true);
+            var date;
+            if (rec[date_name]) {
+                date = formatFunc(rec[date_name]);
+            } else {
+                date = false;
+            }
+            return date;
+        },
         convertData: function (records, groups, groupBy) {
             var data = [];
-            var formatFunc = gantt.date.str_to_date("%Y-%m-%d %h:%i:%s", true);
             // todo: convert date from utc to mgt or wtever
             var self = this;
 
@@ -131,28 +147,13 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             // Create tasks from records
             records.forEach(function (rec) {
                 self.res_ids.push(rec[self.map.identifier]);
-                // value.add(-self.getSession().getTZOffset(value), 'minutes')
-                // data.timezone_offset = (-self.date_object.getTimezoneOffset());
-                var start_date;
-                if (rec[self.map.date_start]) {
-                    start_date = formatFunc(rec[self.map.date_start]);
-                } else {
-                    start_date = false;
-                }
-
-                var end_date;
-                if (rec[self.map.date_end]) {
-                    end_date = formatFunc(rec[self.map.date_end]);
-                } else {
-                    end_date = false;
-                }
 
                 var task = {};
                 task.id = rec[self.map.identifier];
                 task.text = rec[self.map.text];
                 task.type = gantt.config.types.type_task;
-                task.start_date = start_date;
-                task.end_date = end_date;
+                task.start_date = self.parseDate(rec, self.map.date_start);
+                task.end_date = self.parseDate(rec, self.map.date_end);
                 task.owner = rec[self.map.owner][1];
                 task.progress = rec[self.map.progress] / 100.0;
                 task.open = rec[self.map.open];
@@ -200,7 +201,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             self.records = data;
             self.links = links;
         },
-        updateTask: function (data) {
+        writeTask: function (data) {
             var self = this;
             if (data.isGroup) {
                 return $.when();
@@ -229,6 +230,32 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 method: 'write',
                 args: [data.id, values],
                 context: self.getContext(),
+            }).then(function (res) {
+                if (res) {
+                    return self._rpc({
+                        model: self.modelName,
+                        method: 'update_gantt_schedule',
+                        args: [data.id],
+                        context: self.getContext(),
+                    });
+                };
+            });
+        },
+        reloadTaskDates: function (ids) {
+            var self = this;
+            return self._rpc({
+                model: self.modelName,
+                method: 'search_read',
+                fields: self._getDateFields(),
+                domain: [['id', 'in', ids]],
+            }).then(function (records) {
+                records.forEach(function (rec) {
+                    var task = gantt.getTask(rec.id);
+                    if (task) {
+                        task.start_date = self.parseDate(rec, self.map.date_start);
+                        task.end_date = self.parseDate(rec, self.map.date_end);
+                    }
+                });
             });
         },
         createLink: function (data) {
@@ -242,8 +269,22 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return self._rpc({
                 model: self.linkModelName,
                 method: 'create',
-                args: [[values]],
+                args: [values],
                 context: self.getContext(),
+            }).then(function (res) {
+                if (res) {
+                    // Add (don't replace) database ID
+                    var updatedData = {
+                        'databaseId': res
+                    };
+                    gantt.updateLink(data.id, updatedData);
+                    return self._rpc({
+                        model: self.modelName,
+                        method: 'update_gantt_schedule',
+                        args: [parseInt(values.source_id)],
+                        context: self.getContext(),
+                    });
+                };
             });
         },
         deleteLink: function (data) {
@@ -251,7 +292,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return self._rpc({
                 model: self.linkModelName,
                 method: 'unlink',
-                args: [data.id],
+                args: [data.databaseId],
                 context: self.getContext(),
             });
         },

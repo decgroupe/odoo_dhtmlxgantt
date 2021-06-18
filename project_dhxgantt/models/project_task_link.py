@@ -61,5 +61,4 @@ class ProjectTaskLink(models.Model):
     @api.model
     def create(self, vals):
         rec = super().create(vals)
-        rec.source_id.update_gantt_schedule()
         return rec
