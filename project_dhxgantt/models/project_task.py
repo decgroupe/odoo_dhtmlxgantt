@@ -59,53 +59,116 @@ class ProjectTask(models.Model):
         return False
 
     @api.multi
-    def plan(self, calendar_id, planned_duration, date_start):
+    def plan(self, calendar_id, planned_duration, date_ref):
         self.ensure_one()
-        if not date_start:
-            raise Exception('Missing starting date')
-        date_end = calendar_id.plan_minutes(planned_duration, date_start)
-        if not date_end:
+        if not date_ref:
+            raise Exception('Missing reference date')
+        date_planned = calendar_id.plan_minutes(planned_duration, date_ref)
+        if not date_planned:
             raise Exception(
-                'Invalid ending date when planning from {} with '
-                'a duration of {}'.format(date_start, planned_duration)
+                'Invalid resulting date when planning from {} with '
+                'a duration of {}'.format(date_ref, planned_duration)
             )
-        return date_end
+        return date_planned
 
     @api.multi
-    def update_gantt_schedule(self):
+    def update_gantt_schedule(self, backward=False):
         res = []
         if not 'gantt_scheduling' in self.env.context:
             for rec in self:
-                res += rec.with_context(gantt_scheduling=True
-                                       )._update_gantt_schedule()
+                bypass_this = False
+                if backward:
+                    task_id = rec._get_nearest_upstream_task(
+                        link_type=["0", "2"]
+                    )
+                    if task_id:
+                        bypass_this = True
+                        res += task_id.with_context(gantt_scheduling=True)\
+                            ._update_gantt_schedule(from_start=True)
+                if not bypass_this:
+                    res += rec.with_context(gantt_scheduling=True)\
+                        ._update_gantt_schedule(from_start=True)
         return res
 
     @api.multi
-    def _update_gantt_schedule(self):
+    def _update_gantt_schedule(self, from_start=False, from_end=False):
         self.ensure_one()
         res = [self.id]
-        snap = self.env.context.get('gantt_duration_unit') == 'day'
         calendar_id = self._get_calendar_id()
-        # Snap to day limits when gantt view is day, week, month, etc.
-        if snap and calendar_id.is_before_worktime(self.date_start):
-            self.date_start = calendar_id.snap_to_day_start(self.date_start)
-        # Use calendar planning to compute an ending date
-        self.date_end = self.plan(
-            calendar_id, self.planned_duration, self.date_start
-        )
-        # Snap to day limits when gantt view is day, week, month, etc.
-        if snap and calendar_id.is_after_worktime(self.date_end):
-            self.date_end = calendar_id.snap_to_day_end(self.date_end)
+
+        if from_start == from_end:
+            raise Exception('"from_start" or "from_end" argument must be set')
+        elif from_start:
+            self.try_snap_start(calendar_id)
+            # Use calendar planning to compute an ending date
+            self.date_end = self.plan(
+                calendar_id, self.planned_duration, self.date_start
+            )
+            self.try_snap_end(calendar_id)
+        elif from_end:
+            self.try_snap_end(calendar_id)
+            # Use calendar planning to compute a starting date
+            self.date_start = self.plan(
+                calendar_id, -self.planned_duration, self.date_end
+            )
+            self.try_snap_start(calendar_id)
+
+        # Debug updated data
         _logger.info(
             '[{}] >> start={} end={} using CALENDAR {}'.format(
                 self.name, self.date_start, self.date_end, calendar_id.name
             )
         )
+
         # Operate same logic on all downstream tasks
         for link_id in self.downstream_task_ids:
             task_id = link_id.target_id
-            task_id.date_start = self.date_end
-            res += task_id._update_gantt_schedule()
+            nearest_task_id = task_id._get_nearest_upstream_task() or task_id
+            if link_id.type == "0":  # Finish to Start
+                task_id.date_start = nearest_task_id.date_end
+                res += task_id._update_gantt_schedule(from_start=True)
+            if link_id.type == "1":  # Start to Start
+                task_id.date_start = nearest_task_id.date_start
+                res += task_id._update_gantt_schedule(from_start=True)
+            if link_id.type == "2":  # Finish to Finish
+                task_id.date_end = nearest_task_id.date_end
+                res += task_id._update_gantt_schedule(from_end=True)
+            if link_id.type == "3":  # Start to Finish
+                task_id.date_end = nearest_task_id.date_start
+                res += task_id._update_gantt_schedule(from_end=True)
+        return res
+
+    def try_snap_start(self, calendar_id):
+        """Snap to day limits when gantt view is day, week, month, etc.
+        Args:
+            calendar_id ([resource.calendar]): Calendar used to compute 
+            working days
+        """
+        snap = self.env.context.get('gantt_duration_unit') == 'day'
+        if snap and calendar_id.is_before_worktime(self.date_start):
+            self.date_start = calendar_id.snap_to_day_start(self.date_start)
+
+    def try_snap_end(self, calendar_id):
+        """Snap to day limits when gantt view is day, week, month, etc.
+        Args:
+            calendar_id ([resource.calendar]): Calendar used to compute 
+            working days
+        """
+        snap = self.env.context.get('gantt_duration_unit') == 'day'
+        if snap and calendar_id.is_after_worktime(self.date_end):
+            self.date_end = calendar_id.snap_to_day_end(self.date_end)
+
+    def _get_nearest_upstream_task(self, link_type=["0", "1", "2", "3"]):
+        self.ensure_one()
+        res = False
+        last_diff = False
+        for link_id in self.upstream_task_ids:
+            if link_id.type in link_type:
+                task_id = link_id.source_id
+                diff = task_id.date_end - self.date_start
+                if not last_diff or diff > last_diff:
+                    last_diff = diff
+                    res = task_id
         return res
 
     @api.depends('stage_id.gantt_class')

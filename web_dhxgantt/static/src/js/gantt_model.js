@@ -225,6 +225,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             values[self.map.date_start] = JSON.stringify(date_start);
             values[self.map.date_end] = JSON.stringify(date_end);
 
+            var previous_date_start = formatFunc(data.previous_start_date);
+            var previous_date_end = formatFunc(data.previous_end_date);
+
+            var backward = date_start < previous_date_start;
+
             return self._rpc({
                 model: self.modelName,
                 method: 'write',
@@ -235,7 +240,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     return self._rpc({
                         model: self.modelName,
                         method: 'update_gantt_schedule',
-                        args: [data.id],
+                        args: [[data.id], backward],
                         context: self.getContext(),
                     });
                 };

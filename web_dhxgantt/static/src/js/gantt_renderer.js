@@ -220,13 +220,13 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
                 var res = "";
                 if (days > 0) {
-                    res += " "+ days + _lt(" day(s)");
+                    res += " " + days + _lt(" day(s)");
                 }
                 if (hours > 0) {
-                    res += " "+ hours + _lt(" hour(s)");
+                    res += " " + hours + _lt(" hour(s)");
                 }
                 if (minutes > 0) {
-                    res += " "+ minutes + _lt(" minute(s)");
+                    res += " " + minutes + _lt(" minute(s)");
                 }
                 return res.trim();
             };
@@ -399,6 +399,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             });
             this.trigger_up('gantt_config');
             this.trigger_up('gantt_create_dp');
+            this.trigger_up('gantt_attach_events');
             if (!this.events_set) {
                 var self = this;
                 gantt.attachEvent('onBeforeGanttRender', function () {

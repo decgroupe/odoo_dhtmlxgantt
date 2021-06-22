@@ -11,6 +11,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
         custom_events: _.extend({}, AbstractController.prototype.custom_events, {
             gantt_data_updated: '_onGanttUpdated',
             gantt_create_dp: '_onGanttCreateDataProcessor',
+            gantt_attach_events: '_onGanttAttachEvents',
             gantt_config: '_onGanttConfig',
             gantt_show_critical_path: '_onShowCriticalPath',
             gantt_schedule: '_onGanttSchedule',
@@ -89,6 +90,20 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 data.timezone_offset = (-self.date_object.getTimezoneOffset());
                 return true;
             });
+        },
+        _onGanttAttachEvents: function (event) {
+            var self = this;
+            if (!self.events_set) {
+                gantt.attachEvent("onBeforeTaskChanged", function (id, mode, task) {
+                    // Copy current data as previous for next filtering
+                    var task_ref = gantt.getTask(id);
+                    task_ref.previous_start_date = task.start_date;
+                    task_ref.previous_end_date = task.end_date;
+                    task_ref.previous_duration = task.duration;
+                    return true;
+                });
+                self.events_set = true;
+            }
         },
         _onGanttUpdated: function (event) {
             event.stopPropagation();
