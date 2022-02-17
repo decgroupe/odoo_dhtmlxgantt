@@ -223,11 +223,18 @@ class ProjectTask(models.Model):
 
     @api.multi
     def compute_critical_path(self):
-        # evidently the critical path is the longest path on the network graph
-        # evidently this algorithm does not work
+        """ In project management, a critical path is the sequence of project
+            network activities which add up to the longest overall duration,
+            regardless if that longest duration has float or not.
+            This determines the shortest time possible to complete the project.
+        Returns:
+            [type]: [description]
+        """
+        # Find all independants starer tasks
+        leading_task_ids = self.filtered(lambda t: not t.upstream_task_ids)
+        for task_id in leading_task_ids:
+            pass
 
-        # project = self.project_id
-        # tasks = project.task_ids.sorted('date_start')
         tasks = self
 
         critical_path = []
