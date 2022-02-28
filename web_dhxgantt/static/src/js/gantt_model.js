@@ -103,6 +103,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         },
         convertData: function (records, groups, groupBy) {
             var data = [];
+            var parents = [];
             // todo: convert date from utc to mgt or wtever
             var self = this;
 
@@ -137,66 +138,80 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                         project.parent = parentProject.id;
                     }
                     parentProject = project;
-                    data.push(project);
+                    // Do not add project to data, we just put it
+                    // in a temporary list
+                    parents.push(project);
                 });
             });
 
             self.res_ids = [];
+            var parents_added_to_data = [];
             var links = [];
 
             // Create tasks from records
             records.forEach(function (rec) {
-                self.res_ids.push(rec[self.map.identifier]);
+                if (rec[self.map.date_start] == false || rec[self.map.date_end] == false
+                    || rec[self.map.date_start] == rec[self.map.date_end]) {
+                    // Do not add tasks without valid dates
+                } else {
+                    self.res_ids.push(rec[self.map.identifier]);
 
-                var task = {};
-                task.id = rec[self.map.identifier];
-                task.text = rec[self.map.text];
-                task.type = gantt.config.types.type_task;
-                task.start_date = self.parseDate(rec, self.map.date_start);
-                task.end_date = self.parseDate(rec, self.map.date_end);
-                task.owner = rec[self.map.owner][1];
-                task.progress = rec[self.map.progress] / 100.0;
-                task.open = rec[self.map.open];
-                task.links = rec[self.map.links];
-                task.task_class = rec[self.map.task_class];
-                task.columnTitle = task.id;
+                    var task = {};
+                    task.id = rec[self.map.identifier];
+                    task.text = rec[self.map.text];
+                    task.type = gantt.config.types.type_task;
+                    task.start_date = self.parseDate(rec, self.map.date_start);
+                    task.end_date = self.parseDate(rec, self.map.date_end);
+                    task.owner = rec[self.map.owner][1];
+                    task.progress = rec[self.map.progress] / 100.0;
+                    task.open = rec[self.map.open];
+                    task.links = rec[self.map.links];
+                    task.task_class = rec[self.map.task_class];
+                    task.columnTitle = task.owner;
 
-                if (gantt.config.duration_unit == "minute") {
-                    task.duration = rec[self.map.duration];
-                } else if (gantt.config.duration_unit == "hour") {
-                    task.duration = rec[self.map.duration] / 60;
-                } else if (gantt.config.duration_unit == "day") {
-                    task.duration = rec[self.map.duration] / 60 / 7;
-                }
+                    if (gantt.config.duration_unit == "minute") {
+                        task.duration = rec[self.map.duration];
+                    } else if (gantt.config.duration_unit == "hour") {
+                        task.duration = rec[self.map.duration] / 60;
+                    } else if (gantt.config.duration_unit == "day") {
+                        task.duration = rec[self.map.duration] / 60 / 7;
+                    }
 
-                // Retrieve and set parent from already created project/groups
-                var parent = data.find(function (element) {
-                    if ("groupBy" in element) {
-                        var matchNeeded = 0;
-                        var matchCount = 0;
-                        for (const [idx, field] of Object.entries(groupBy)) {
-                            if (field in rec) {
-                                matchNeeded++;
-                                var value = rec[field];
-                                if (Array.isArray(rec[field])) {
-                                    value = rec[field][0];
-                                }
-                                if (value == element.groupBy[field]) {
-                                    matchCount++;
+                    // Retrieve and set parent from already created project/groups
+                    var parent = parents.find(function (element) {
+                        if ("groupBy" in element) {
+                            var matchNeeded = 0;
+                            var matchCount = 0;
+                            for (const [idx, field] of Object.entries(groupBy)) {
+                                if (field in rec) {
+                                    matchNeeded++;
+                                    var value = rec[field];
+                                    if (Array.isArray(rec[field])) {
+                                        value = rec[field][0];
+                                    }
+                                    if (value == element.groupBy[field]) {
+                                        matchCount++;
+                                    }
                                 }
                             }
+                            if (matchNeeded > 0 && matchNeeded == matchCount) {
+                                return element;
+                            }
                         }
-                        if (matchNeeded > 0 && matchNeeded == matchCount) {
-                            return element;
+                    });
+                    if (parent) {
+                        task.parent = parent.id;
+                        // Add task parent to data list if not already 
+                        // pushed
+                        if (!parents_added_to_data.includes(parent.id)) {
+                            parents_added_to_data.push(parent.id);
+                            data.push(parent);
                         }
                     }
-                });
-                if (parent) {
-                    task.parent = parent.id;
-                }
 
-                data.push(task);
-                links.push.apply(links, JSON.parse(task.links))
+                    data.push(task);
+                    links.push.apply(links, JSON.parse(task.links))
+                }
             });
             self.records = data;
             self.links = links;
