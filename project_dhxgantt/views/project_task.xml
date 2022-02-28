@@ -20,7 +20,7 @@
                 duration="planned_duration"
                 progress="progress"
                 open="open"
-                task_class="gantt_class"
+                css_class="gantt_class"
                 links="links"
                 link_model_name="project.task.link"
             />

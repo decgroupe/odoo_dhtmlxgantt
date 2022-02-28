@@ -205,7 +205,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.setWorkTime({ hours: ["8:30-12:00", "13:30-17:00"] }); //global working hours
 
             gantt.templates.task_class = function (start, end, task) {
-                return task.task_class;
+                return task.css_class;
             };
 
             // https://docs.dhtmlx.com/gantt/api__gantt_rightside_text_template.html

@@ -34,7 +34,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.task_map.links = params.links;
             this.task_map.parent = params.parent;
             this.task_map.owner = params.owner;
-            this.task_map.task_class = params.task_class;
+            this.task_map.css_class = params.css_class;
 
             this.parent_map = {}
             this.parent_map.date_start = params.parent_date_start;
@@ -55,6 +55,13 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             var self = this;
             var values = Object.keys(self.task_map).map(function (key) {
                 return self.task_map[key];
+            });
+            return values;
+        },
+        _getParentFields: function () {
+            var self = this;
+            var values = Object.keys(self.parent_map).map(function (key) {
+                return self.parent_map[key];
             });
             return values;
         },
@@ -109,6 +116,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         convertData: function (records, groups, groupBy) {
             var data = [];
             var parents = [];
+            var parent_ids = [];
+            var parent_model_name = false;
             // todo: convert date from utc to mgt or wtever
             var self = this;
 
@@ -133,6 +142,12 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                         if (field in self.fields) {
                             project.modelName = self.fields[field].relation || '';
                             project.modelId = rec[field][0] || 0;
+                            if (parent_model_name == false) {
+                                parent_model_name = project.modelName;
+                            }
+                            if (project.modelName == parent_model_name) {
+                                parent_ids.push(project.modelId);
+                            }
                         }
                     } else {
                         project.groupBy[field] = rec[field];
@@ -149,9 +164,41 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 });
             });
 
+            self._rpc({
+                model: parent_model_name,
+                method: 'read',
+                args: [
+                    parent_ids,
+                    self._getParentFields(),
+                ],
+                context: this.context,
+            }).then(function (parent_records) {
+                //self.convertData(records, groups, self.groupBy);
+                parent_records.forEach(function (rec) {
+                    console.log(rec);
+                    var parent = parents.find(function (element) {
+                        if (element.modelId == rec.id) {
+                            return element;
+                        }
+                    });
+                    if (parent) {
+                        var date = self.parseDate(rec, self.parent_map.date_start);
+                        if (date) {
+                            parent.start_date = date;
+                        }
+                        var date = self.parseDate(rec, self.parent_map.date_stop);
+                        if (date) {
+                            parent.end_date = date;
+                        }
+                    }
+                });
+            });
+
             self.res_ids = [];
             var parents_added_to_data = [];
             var links = [];
+            var css_classes = {}
+            const css_classes_length = 20;
 
             // Create tasks from records
             records.forEach(function (rec) {
@@ -171,8 +218,19 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     task.progress = rec[self.task_map.progress] / 100.0;
                     task.open = rec[self.task_map.open];
                     task.links = rec[self.task_map.links];
-                    task.task_class = rec[self.task_map.task_class];
                     task.columnTitle = task.owner;
+
+                    var owner_id = rec[self.task_map.owner][0];
+                    if (!(owner_id in css_classes)) {
+                        var idx = 1 + Object.keys(css_classes).length % css_classes_length;
+                        if (rec[self.task_map.css_class]) {
+                            css_classes[owner_id] = rec[self.task_map.css_class] + " ";
+                        } else {
+                            css_classes[owner_id] = "";
+                        }
+                        css_classes[owner_id] += "o_dhx_gantt_color_" + idx;
+                    }
+                    task.css_class = css_classes[owner_id];
 
                     if (gantt.config.duration_unit == "minute") {
                         task.duration = rec[self.task_map.duration];

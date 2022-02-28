@@ -174,11 +174,11 @@ class ProjectTask(models.Model):
     @api.depends('stage_id.gantt_class')
     def _compute_gantt_class(self):
         for rec in self:
-            rec.gantt_class = ''
+            rec.gantt_class = "decoration-info"
             if rec.stage_id and rec.stage_id.gantt_class:
                 css_name = rec.stage_id.gantt_class.replace(' ', '_').lower()
                 if css_name:
-                    rec.gantt_class = 'o_dhx_gantt_task_stage_{}'.format(
+                    rec.gantt_class += ' o_dhx_gantt_task_stage_{}'.format(
                         css_name
                     )
 
