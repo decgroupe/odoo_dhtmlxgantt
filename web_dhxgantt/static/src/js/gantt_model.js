@@ -21,19 +21,24 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.modelName = params.modelName;
             this.linkModelName = params.linkModelName;
 
-            // Store field names mapping
-            this.map = {}
-            this.map.identifier = params.identifier;
-            this.map.text = params.text;
-            this.map.date_start = params.date_start;
-            this.map.date_end = params.date_end;
-            this.map.duration = params.duration;
-            this.map.progress = params.progress;
-            this.map.open = params.open;
-            this.map.links = params.links;
-            this.map.project = params.project;
-            this.map.owner = params.owner;
-            this.map.task_class = params.task_class;
+            // Store field names mapping (params are read from arch in
+            // gantt_view.js)
+            this.task_map = {}
+            this.task_map.identifier = params.identifier;
+            this.task_map.text = params.text;
+            this.task_map.date_start = params.date_start;
+            this.task_map.date_stop = params.date_stop;
+            this.task_map.duration = params.duration;
+            this.task_map.progress = params.progress;
+            this.task_map.open = params.open;
+            this.task_map.links = params.links;
+            this.task_map.parent = params.parent;
+            this.task_map.owner = params.owner;
+            this.task_map.task_class = params.task_class;
+
+            this.parent_map = {}
+            this.parent_map.date_start = params.parent_date_start;
+            this.parent_map.date_stop = params.parent_date_stop;
 
             this.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
 
@@ -48,16 +53,16 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         },
         _getFields: function () {
             var self = this;
-            var values = Object.keys(self.map).map(function (key) {
-                return self.map[key];
+            var values = Object.keys(self.task_map).map(function (key) {
+                return self.task_map[key];
             });
             return values;
         },
         _getDateFields: function () {
             var self = this;
             return [
-                this.map.date_start,
-                self.map.date_end,
+                self.task_map.date_start,
+                self.task_map.date_stop,
             ]
         },
         _load: function (params) {
@@ -76,7 +81,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 domain: self.domain,
                 groupBy: self.groupBy,
                 orderBy: [{
-                    name: self.map.identifier,
+                    name: self.task_map.identifier,
                     asc: true,
                 }],
                 lazy: false,
@@ -150,31 +155,31 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
             // Create tasks from records
             records.forEach(function (rec) {
-                if (rec[self.map.date_start] == false || rec[self.map.date_end] == false
-                    || rec[self.map.date_start] == rec[self.map.date_end]) {
+                if (rec[self.task_map.date_start] == false || rec[self.task_map.date_stop] == false
+                    || rec[self.task_map.date_start] == rec[self.task_map.date_stop]) {
                     // Do not add tasks without valid dates
                 } else {
-                    self.res_ids.push(rec[self.map.identifier]);
+                    self.res_ids.push(rec[self.task_map.identifier]);
 
                     var task = {};
-                    task.id = rec[self.map.identifier];
-                    task.text = rec[self.map.text];
+                    task.id = rec[self.task_map.identifier];
+                    task.text = rec[self.task_map.text];
                     task.type = gantt.config.types.type_task;
-                    task.start_date = self.parseDate(rec, self.map.date_start);
-                    task.end_date = self.parseDate(rec, self.map.date_end);
-                    task.owner = rec[self.map.owner][1];
-                    task.progress = rec[self.map.progress] / 100.0;
-                    task.open = rec[self.map.open];
-                    task.links = rec[self.map.links];
-                    task.task_class = rec[self.map.task_class];
+                    task.start_date = self.parseDate(rec, self.task_map.date_start);
+                    task.end_date = self.parseDate(rec, self.task_map.date_stop);
+                    task.owner = rec[self.task_map.owner][1];
+                    task.progress = rec[self.task_map.progress] / 100.0;
+                    task.open = rec[self.task_map.open];
+                    task.links = rec[self.task_map.links];
+                    task.task_class = rec[self.task_map.task_class];
                     task.columnTitle = task.owner;
 
                     if (gantt.config.duration_unit == "minute") {
-                        task.duration = rec[self.map.duration];
+                        task.duration = rec[self.task_map.duration];
                     } else if (gantt.config.duration_unit == "hour") {
-                        task.duration = rec[self.map.duration] / 60;
+                        task.duration = rec[self.task_map.duration] / 60;
                     } else if (gantt.config.duration_unit == "day") {
-                        task.duration = rec[self.map.duration] / 60 / 7;
+                        task.duration = rec[self.task_map.duration] / 60 / 7;
                     }
 
                     // Retrieve and set parent from already created project/groups
@@ -222,26 +227,26 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 return $.when();
             }
             var values = {};
-            values[self.map.text] = data.text;
-            values[self.map.open] = data.open;
-            values[self.map.progress] = data.progress;
+            values[self.task_map.text] = data.text;
+            values[self.task_map.open] = data.open;
+            values[self.task_map.progress] = data.progress;
 
             if (gantt.config.duration_unit == "minute") {
-                values[self.map.duration] = data.duration;
+                values[self.task_map.duration] = data.duration;
             } else if (gantt.config.duration_unit == "hour") {
-                values[self.map.duration] = data.duration * 60;
+                values[self.task_map.duration] = data.duration * 60;
             } else if (gantt.config.duration_unit == "day") {
-                values[self.map.duration] = data.duration * 60 * 7;
+                values[self.task_map.duration] = data.duration * 60 * 7;
             }
 
             var formatFunc = gantt.date.str_to_date("%d-%m-%Y %h:%i");
             var date_start = formatFunc(data.start_date);
-            var date_end = formatFunc(data.end_date);
-            values[self.map.date_start] = JSON.stringify(date_start);
-            values[self.map.date_end] = JSON.stringify(date_end);
+            var date_stop = formatFunc(data.end_date);
+            values[self.task_map.date_start] = JSON.stringify(date_start);
+            values[self.task_map.date_stop] = JSON.stringify(date_stop);
 
             var previous_date_start = formatFunc(data.previous_start_date);
-            var previous_date_end = formatFunc(data.previous_end_date);
+            var previous_date_stop = formatFunc(data.previous_end_date);
 
             var backward = date_start < previous_date_start;
 
@@ -272,8 +277,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 records.forEach(function (rec) {
                     var task = gantt.getTask(rec.id);
                     if (task) {
-                        task.start_date = self.parseDate(rec, self.map.date_start);
-                        task.end_date = self.parseDate(rec, self.map.date_end);
+                        task.start_date = self.parseDate(rec, self.task_map.date_start);
+                        task.end_date = self.parseDate(rec, self.task_map.date_stop);
                     }
                 });
             });
