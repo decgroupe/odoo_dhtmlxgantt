@@ -62,8 +62,17 @@
         </field>
     </record>
 
+    <!-- All Task action with gantt view -->
+    <record id="project.action_view_task" model="ir.actions.act_window">
+        <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity,dhxgantt</field>
+    </record>
+
     <record id="project.act_project_project_2_project_task_all" model="ir.actions.act_window">
         <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity,dhxgantt</field>
+    </record>
+
+    <record id="project.project_task_action_sub_task" model="ir.actions.act_window">
+        <field name="view_mode">kanban,tree,form,calendar,timeline,pivot,graph,activity,dhxgantt</field>
     </record>
 
 
