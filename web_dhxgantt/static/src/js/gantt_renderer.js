@@ -30,6 +30,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this.showOnlyWorkdays = true;
             this.showOnlyOfficeHours = true;
 
+            gantt.config.row_height = 24;
+            gantt.config.task_height_offset = 0.1;
             gantt.config.min_column_width = 20;
             gantt.config.work_time = true;
             gantt.config.skip_off_time = false;
@@ -40,16 +42,15 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // Note that `resize` is a PRO edition functionality
             gantt.config.columns = [
                 // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
-                { name: "columnTitle", label: "Title", tree: true, width: 110, min_width: 110 },
+                { name: "columnTitle", label: "Title", tree: true, width: 130, min_width: 110 },
                 { name: "start_date", align: "center", resize: true },
-                { name: "duration", label: "Dur.", align: "right", width: 40 },
-                { name: "owner", label: "Owner", align: "left", width: 200 },
+                { name: "duration", label: "Dur.", align: "right", width: 60 },
             ]
             gantt.config.layout = {
                 css: "gantt_container",
                 cols: [
                     {
-                        width: 200,
+                        width: 280,
                         // adding horizontal scrollbar to the grid via 
                         // the scrollX attribute
                         rows: [
