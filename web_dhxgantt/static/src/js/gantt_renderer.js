@@ -42,7 +42,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // Note that `resize` is a PRO edition functionality
             gantt.config.columns = [
                 // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
-                { name: "columnTitle", label: "Title", tree: true, width: 130, min_width: 110 },
+                { name: "columnTitle", label: "Title", tree: true, width: 160, min_width: 110 },
                 { name: "start_date", align: "center", resize: true },
                 { name: "duration", label: "Dur.", align: "right", width: 60 },
             ]
@@ -50,7 +50,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 css: "gantt_container",
                 cols: [
                     {
-                        width: 280,
+                        width: 310,
                         // adding horizontal scrollbar to the grid via 
                         // the scrollX attribute
                         rows: [
@@ -206,6 +206,14 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
             gantt.templates.task_class = function (start, end, task) {
                 return task.css_class;
+            };
+
+            gantt.templates.grid_row_class = function (start, end, task) {
+                return task.css_class;
+            };
+
+            gantt.templates.task_row_class = function (start, end, task) {
+                return "";
             };
 
             // https://docs.dhtmlx.com/gantt/api__gantt_rightside_text_template.html

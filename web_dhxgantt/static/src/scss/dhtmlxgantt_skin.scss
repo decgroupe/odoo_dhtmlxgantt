@@ -256,8 +256,8 @@ div.gantt_scale_line:last-child::after {
   background-color: #f5fffc;
 }
 .gantt_task_line.gantt_project {
-  background-color: $brand-primary;
-  border-color: $brand-primary-dark;
+  background-color: $o-enterprise-color;
+  border-color: darken($o-enterprise-color, 10%);
   color: #fff;
 }
 .gantt_task_line.gantt_project .gantt_task_content {
@@ -411,7 +411,7 @@ div.gantt_cal_light select:focus {
 .gantt_cal_light .gantt_btn_set.gantt_save_btn_set,
 .gantt_qi_big_icon.icon_edit,
 .gantt_popup_button.gantt_ok_button {
-  background-color: $brand-secondary;
+  background-color: $o-enterprise-primary-color;
   color: #FFFFFF;
 }
 .gantt_qi_big_icon.icon_edit:hover,
@@ -1172,8 +1172,8 @@ div.dhx_modal_cover {
   position: absolute;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-  background-color: $brand-secondary;
-  border: 1px solid $brand-secondary;
+  background-color: $o-enterprise-primary-color;
+  border: 1px solid $o-enterprise-primary-color;
   -webkit-user-select: none;
   -moz-user-select: none;
   -moz-user-select: -moz-none;
@@ -1295,7 +1295,7 @@ div.dhx_modal_cover {
 }
 .gantt_link_source,
 .gantt_link_target {
-  box-shadow: 0px 0px 3px $brand-secondary;
+  box-shadow: 0px 0px 3px $o-enterprise-primary-color;
 }
 .gantt_link_target.link_start_allow,
 .gantt_link_target.link_finish_allow {
@@ -2374,7 +2374,7 @@ div.dhx_modal_cover {
   background-color: #ffffff;
 }
 .gantt_popup_button.gantt_delete_button {
-  background-color: $brand-secondary;
+  background-color: $o-enterprise-primary-color;
   color: #FFFFFF;
 }
 .gantt_container_resize_watcher {

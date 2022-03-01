@@ -2,6 +2,9 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
     "use strict";
 
     var AbstractModel = require('web.AbstractModel');
+    var core = require('web.core');
+
+    var _lt = core._lt;
 
     var GanttModel = AbstractModel.extend({
         get: function () {
@@ -137,7 +140,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     if (Array.isArray(rec[field])) {
                         project.groupBy[field] = rec[field][0];
                         project.text = rec[field][1];
-                        project.columnTitle = rec[field][1] + ' ' + project.columnTitle;
+                        project.columnTitle = rec[field][1];
                         // Add model informations to allow opening it as a Form
                         if (field in self.fields) {
                             project.modelName = self.fields[field].relation || '';
@@ -173,9 +176,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 ],
                 context: this.context,
             }).then(function (parent_records) {
-                //self.convertData(records, groups, self.groupBy);
                 parent_records.forEach(function (rec) {
-                    console.log(rec);
                     var parent = parents.find(function (element) {
                         if (element.modelId == rec.id) {
                             return element;
@@ -198,7 +199,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             var parents_added_to_data = [];
             var links = [];
             var css_classes = {}
-            const css_classes_length = 20;
+            const css_classes_length = 28;
 
             // Create tasks from records
             records.forEach(function (rec) {
@@ -218,7 +219,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     task.progress = rec[self.task_map.progress] / 100.0;
                     task.open = rec[self.task_map.open];
                     task.links = rec[self.task_map.links];
-                    task.columnTitle = task.owner;
+                    task.columnTitle = task.owner || _lt("Unassigned");
 
                     var owner_id = rec[self.task_map.owner][0];
                     if (!(owner_id in css_classes)) {

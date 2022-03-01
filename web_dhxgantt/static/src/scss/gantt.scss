@@ -1,3 +1,34 @@
+$o-dhxgantt-colors: #F06050,
+#F4A460,
+#F7CD1F,
+#6CC1ED,
+#814968,
+#EB7E7F,
+#2C8397,
+#475577,
+#D6145F,
+#30C381,
+#9365B8,
+#aa4b6b,
+#30C381,
+#97743a,
+#F7CD1F,
+#4285F4,
+#8E24AA,
+#D6145F,
+#173e43,
+#348F50,
+#AA3A38,
+#795548,
+#5e0231,
+#6be585,
+#999966,
+#e9d362,
+#b56969,
+#bdc3c7,
+#649173 !default;
+
+
 .o_dhx_gantt_root {
     /* width: 100%; */
     height: 100%;
@@ -13,15 +44,6 @@
 .o_dhx_gantt_header {
     background-color: white;
     min-height: 40px;
-    /* position: relative;
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: flex; */
-    /* justify-content: space-between; */
-    /* padding: 0.25rem 0.5rem;
-    padding-left: 16px;
-    border-bottom: 1px solid #ced4da;
-    background-color: white; */
 }
 
 .o_dhx_button {
@@ -46,31 +68,28 @@
     color: gray !important;
 }
 
-
-// Define the necessary conditions to provide visual feedback on hover,
-// focus, drag, clone and resize.
-@mixin o-gantt-hover() {
+@mixin o_dhx_hover() {
 
     &:hover,
     &:focus,
     &.ui-draggable-dragging,
     &.ui-resizable-resize {
-
-        // Avoid visual feedback if 'o_gantt_view' has class 'o_grabbing' or 'o_copying'.
-        @at-root #{selector-replace(&, ".o_gantt_view", ".o_gantt_view:not(.o_grabbing):not(.o_copying):not(.o_no_dragging)")} {
-            @content;
-        }
+        @content;
     }
 }
 
-// Generate background and text for each color.
-@mixin o_dhx_hoverable_colors($color) {
-    $color-subdle: mix($color, white, 60%);
-    color: color-yiq($color-subdle);
-    background-color: $color-subdle;
-    cursor: pointer;
+@mixin o_dhx_border_colors($color) {
+    $color-subdle: mix($color, black, 60%);
+    border-color: $color-subdle;
+}
 
-    @include o-gantt-hover() {
+@mixin o_dhx_background_colors($color) {
+    $color-subdle: mix($color, white, 60%);
+    background-color: $color-subdle;
+}
+
+@mixin o_dhx_background_colors_hover($color) {
+    @include o_dhx_hover() {
         background-color: $color;
         color: color-yiq($color);
     }
@@ -79,36 +98,64 @@
 @mixin o_dhx_text_colors($color) {
     $color-subdle: mix($color, white, 60%);
     color: color-yiq($color-subdle);
+}
 
-    @include o-gantt-hover() {
+@mixin o_dhx_text_colors_hover($color) {
+    @include o_dhx_hover() {
         color: color-yiq($color);
     }
 }
 
-// Generate stripes decorations for each color.
-@mixin o_dhx_decorations($color) {
+@mixin o_dhx_background_decorations($color) {
     $color-subdle: mix($color, white, 60%);
     background-image: repeating-linear-gradient(-45deg, $color-subdle 0 10px, lighten($color-subdle, 6%) 10px 20px);
+}
 
-    @include o-gantt-hover() {
+@mixin o_dhx_background_decorations_hover($color) {
+    @include o_dhx_hover() {
         background-image: repeating-linear-gradient(-45deg, $color 0 10px, lighten($color, 6%) 10px 20px);
     }
 }
 
+@for $index from 1 through length($o-dhxgantt-colors) - 1 {
 
-// used for `color` attribute on <gantt>
-@for $index from 2 through length($o-colors-complete) - 1 {
-    &.o_dhx_gantt_color_#{$index - 1} {
-        $gantt-color: nth($o-colors-complete, $index);
+    .gantt_task_line {
+        &.o_dhx_gantt_color_#{$index} {
+            $gantt-color: nth($o-dhxgantt-colors, $index);
 
-        @include o_dhx_hoverable_colors($gantt-color);
+            @include o_dhx_border_colors($gantt-color);
 
-        &.decoration-info {
-            @include o_dhx_decorations($gantt-color);
-        }
+            @include o_dhx_background_colors($gantt-color);
+            @include o_dhx_background_colors_hover($gantt-color);
 
-        .gantt_task_content {
-            @include o_dhx_text_colors($gantt-color);
+            &.decoration-info {
+                @include o_dhx_background_decorations($gantt-color);
+                @include o_dhx_background_decorations_hover($gantt-color);
+            }
+
+            .gantt_task_content {
+                @include o_dhx_text_colors($gantt-color);
+                @include o_dhx_text_colors_hover($gantt-color);
+            }
         }
     }
+
+    .gantt_row {
+        &.o_dhx_gantt_color_#{$index} {
+            .gantt_cell_tree {
+                $gantt-color: nth($o-dhxgantt-colors, $index);
+
+                border-width: 1px 0 0 0;
+                border-style: solid;
+                border-color: #fff;
+
+                @include o_dhx_background_colors($gantt-color);
+
+                .gantt_tree_content {
+                    @include o_dhx_text_colors($gantt-color);
+                }
+            }
+        }
+    }
+
 }
