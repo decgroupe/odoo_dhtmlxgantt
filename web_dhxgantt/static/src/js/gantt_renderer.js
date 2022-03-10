@@ -39,7 +39,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.config.drag_project = true;
 
             // https://docs.dhtmlx.com/gantt/desktop__specifying_columns.html
-            // Note that `resize` is a PRO edition functionality
+            // Note that `resize` with `config.grid_resize` is a PRO edition
+            // functionality
             gantt.config.columns = [
                 // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
                 { name: "columnTitle", label: "Title", tree: true, width: 160, min_width: 110 },

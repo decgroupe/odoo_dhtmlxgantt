@@ -229,61 +229,67 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
             // Create gantt-tasks from records
             records.forEach(function (rec) {
-                if (rec[self.task_map.date_start] == false || rec[self.task_map.date_stop] == false
-                    || rec[self.task_map.date_start] == rec[self.task_map.date_stop]) {
-                    // Do not add tasks without valid dates
-                } else {
-                    self.res_ids.push(rec[self.task_map.identifier]);
 
-                    var task = {};
-                    task.id = rec[self.task_map.identifier];
-                    task.text = rec[self.task_map.text];
-                    task.type = gantt.config.types.type_task;
+                self.res_ids.push(rec[self.task_map.identifier]);
+
+                var task = {};
+                task.id = rec[self.task_map.identifier];
+                task.text = rec[self.task_map.text];
+                task.type = gantt.config.types.type_task;
+
+                // Set tasks without valid dates as unscheduled
+                // they can be hide using `show_unscheduled=False`
+                if (rec[self.task_map.date_start] == false
+                    || rec[self.task_map.date_stop] == false
+                    || rec[self.task_map.date_start] == rec[self.task_map.date_stop]) {
+                        task.unscheduled = true;
+                } else {
                     task.start_date = self.parseDate(rec, self.task_map.date_start);
                     task.end_date = self.parseDate(rec, self.task_map.date_stop);
-                    task.owner = rec[self.task_map.owner][1];
-                    task.progress = rec[self.task_map.progress] / 100.0;
-                    task.open = rec[self.task_map.open];
-                    task.links = rec[self.task_map.links];
-                    task.columnTitle = task.owner || _lt("Unassigned");
-
-                    var owner_id = rec[self.task_map.owner][0];
-                    if (!(owner_id in css_classes)) {
-                        var idx = 1 + Object.keys(css_classes).length % css_classes_length;
-                        if (rec[self.task_map.css_class]) {
-                            css_classes[owner_id] = rec[self.task_map.css_class] + " ";
-                        } else {
-                            css_classes[owner_id] = "";
-                        }
-                        css_classes[owner_id] += "o_dhx_gantt_color_" + idx;
-                    }
-                    task.css_class = css_classes[owner_id];
-
-                    if (gantt.config.duration_unit == "minute") {
-                        task.duration = rec[self.task_map.duration];
-                    } else if (gantt.config.duration_unit == "hour") {
-                        task.duration = rec[self.task_map.duration] / 60;
-                    } else if (gantt.config.duration_unit == "day") {
-                        task.duration = rec[self.task_map.duration] / 60 / 7;
-                    }
-
-                    // Retrieve and set parent from already created project/groups
-                    // 1 - Build groupBy for this record
-                    var recGroupBy = {};
-                    for (let j = 0; j < groupBy.length; j++) {
-                        var field = groupBy[j];
-                        var value = rec[field];
-                        recGroupBy[field] = value;
-                    }
-                    // 2 - Retrieve its parent with this groupBy
-                    var parent = self.findGroup(ganttGroups, recGroupBy);
-                    if (parent) {
-                        task.parent = parent.id;
-                    }
-
-                    data.push(task);
-                    links.push.apply(links, JSON.parse(task.links))
                 }
+
+                task.owner = rec[self.task_map.owner][1];
+                task.progress = rec[self.task_map.progress] / 100.0;
+                task.open = rec[self.task_map.open];
+                task.links = rec[self.task_map.links];
+                task.columnTitle = task.owner || _lt("Unassigned");
+
+                var owner_id = rec[self.task_map.owner][0];
+                if (!(owner_id in css_classes)) {
+                    var idx = 1 + Object.keys(css_classes).length % css_classes_length;
+                    if (rec[self.task_map.css_class]) {
+                        css_classes[owner_id] = rec[self.task_map.css_class] + " ";
+                    } else {
+                        css_classes[owner_id] = "";
+                    }
+                    css_classes[owner_id] += "o_dhx_gantt_color_" + idx;
+                }
+                task.css_class = css_classes[owner_id];
+
+                if (gantt.config.duration_unit == "minute") {
+                    task.duration = rec[self.task_map.duration];
+                } else if (gantt.config.duration_unit == "hour") {
+                    task.duration = rec[self.task_map.duration] / 60;
+                } else if (gantt.config.duration_unit == "day") {
+                    task.duration = rec[self.task_map.duration] / 60 / 7;
+                }
+
+                // Retrieve and set parent from already created project/groups
+                // 1 - Build groupBy for this record
+                var recGroupBy = {};
+                for (let j = 0; j < groupBy.length; j++) {
+                    var field = groupBy[j];
+                    var value = rec[field];
+                    recGroupBy[field] = value;
+                }
+                // 2 - Retrieve its parent with this groupBy
+                var parent = self.findGroup(ganttGroups, recGroupBy);
+                if (parent) {
+                    task.parent = parent.id;
+                }
+
+                data.push(task);
+                links.push.apply(links, JSON.parse(task.links))
             });
             self.records = data;
             // self.links = links;
