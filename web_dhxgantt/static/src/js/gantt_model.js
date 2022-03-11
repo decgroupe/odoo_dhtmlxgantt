@@ -107,7 +107,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             });
         },
         parseDate(rec, date_name) {
-            var formatFunc = gantt.date.str_to_date("%Y-%m-%d %h:%i:%s", true);
+            var formatFunc = gantt.date.str_to_date("%Y-%m-%d %H:%i:%s", true);
             var date;
             if (rec[date_name]) {
                 date = formatFunc(rec[date_name]);
@@ -242,7 +242,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 if (rec[self.task_map.date_start] == false
                     || rec[self.task_map.date_stop] == false
                     || rec[self.task_map.date_start] == rec[self.task_map.date_stop]) {
-                        task.unscheduled = true;
+                    task.unscheduled = true;
                 } else {
                     task.start_date = self.parseDate(rec, self.task_map.date_start);
                     task.end_date = self.parseDate(rec, self.task_map.date_stop);
@@ -300,28 +300,44 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 return $.when();
             }
             var values = {};
-            values[self.task_map.text] = data.text;
-            values[self.task_map.open] = data.open;
-            values[self.task_map.progress] = data.progress;
-
-            if (gantt.config.duration_unit == "minute") {
-                values[self.task_map.duration] = data.duration;
-            } else if (gantt.config.duration_unit == "hour") {
-                values[self.task_map.duration] = data.duration * 60;
-            } else if (gantt.config.duration_unit == "day") {
-                values[self.task_map.duration] = data.duration * 60 * 7;
+            if ('text' in data) {
+                values[self.task_map.text] = data.text;
+            }
+            if ('open' in data) {
+                values[self.task_map.open] = data.open;
+            }
+            if ('progress' in data) {
+                values[self.task_map.progress] = data.progress;
             }
 
-            var formatFunc = gantt.date.str_to_date("%d-%m-%Y %h:%i");
-            var date_start = formatFunc(data.start_date);
-            var date_stop = formatFunc(data.end_date);
-            values[self.task_map.date_start] = JSON.stringify(date_start);
-            values[self.task_map.date_stop] = JSON.stringify(date_stop);
+            if ('duration' in data) {
+                if (gantt.config.duration_unit == "minute") {
+                    values[self.task_map.duration] = data.duration;
+                } else if (gantt.config.duration_unit == "hour") {
+                    values[self.task_map.duration] = data.duration * 60;
+                } else if (gantt.config.duration_unit == "day") {
+                    values[self.task_map.duration] = data.duration * 60 * 7;
+                }
+            }
+            
+            var backward = false;
+            var formatFunc = gantt.date.str_to_date("%d-%m-%Y %H:%i");
+            if ('start_date' in data) {
+                var date_start = formatFunc(data.start_date);
+                values[self.task_map.date_start] = JSON.stringify(date_start);
+            }
+            if ('end_date' in data) {
+                var date_stop = formatFunc(data.end_date);
+                values[self.task_map.date_stop] = JSON.stringify(date_stop);
+            }
 
-            var previous_date_start = formatFunc(data.previous_start_date);
-            var previous_date_stop = formatFunc(data.previous_end_date);
-
-            var backward = date_start < previous_date_start;
+            if ('previous_start_date' in data) {
+                var previous_date_start = formatFunc(data.previous_start_date);
+                backward = date_start < previous_date_start;
+            }
+            if ('previous_end_date' in data) {
+                var previous_date_stop = formatFunc(data.previous_end_date);
+            }
 
             return self._rpc({
                 model: self.modelName,

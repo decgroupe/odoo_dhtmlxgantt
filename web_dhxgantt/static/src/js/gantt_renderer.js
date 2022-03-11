@@ -23,12 +23,12 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this._super.apply(this, arguments);
             var self = this;
 
-            this.modelName = params.modelName;
-            this.fieldsViewInfo = params.fieldsViewInfo;
+            self.modelName = params.modelName;
+            self.fieldsViewInfo = params.fieldsViewInfo;
 
-            this.hoursPerDay = 7;
-            this.showOnlyWorkdays = true;
-            this.showOnlyOfficeHours = true;
+            self.hoursPerDay = 7;
+            self.showOnlyWorkdays = true;
+            self.showOnlyOfficeHours = true;
 
             gantt.config.row_height = 24;
             gantt.config.task_height_offset = 0.1;
@@ -37,6 +37,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.config.skip_off_time = false;
             gantt.config.drag_progress = params.drag_progress;
             gantt.config.drag_project = true;
+
 
             // https://docs.dhtmlx.com/gantt/desktop__specifying_columns.html
             // Note that `resize` with `config.grid_resize` is a PRO edition
@@ -386,6 +387,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             this.renderGantt();
         },
         renderGantt: function () {
+            var self = this;
             var gantt_root = this.$('.o_dhx_gantt_root').get(0);
             var gantt_container = this.$('.o_dhx_gantt').get(0);
             // Selector is not finding the `gantt_root` ! don't know why ...
@@ -406,12 +408,13 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 tooltip: true,
                 // https://docs.dhtmlx.com/gantt/desktop__fullscreen_mode.html
                 fullscreen: true,
+                // https://docs.dhtmlx.com/gantt/desktop__extensions_list.html#advanceddragndrop
+                click_drag: true,
             });
             this.trigger_up('gantt_config');
             this.trigger_up('gantt_create_dp');
             this.trigger_up('gantt_attach_events');
             if (!this.events_set) {
-                var self = this;
                 gantt.attachEvent('onBeforeGanttRender', function () {
                     var rootHeight = self.$el.height();
                     var headerHeight = self.$('.o_dhx_gantt_header').height();
@@ -420,6 +423,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 this.events_set = true;
             }
             gantt.clearAll();
+
+            // Configure `marker` plugin
             var date_to_str = gantt.date.date_to_str(gantt.config.task_date);
             gantt.addMarker({
                 start_date: new Date(), //a Date object that sets the marker's date
@@ -431,14 +436,36 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             var headerHeight = this.$('.o_dhx_gantt_header').height();
             this.$('.o_dhx_gantt').height(rootHeight - headerHeight);
 
+            // Configure `drag_timeline` plugin
+            gantt.config.drag_timeline = {
+                ignore: ".gantt_task_line, .gantt_task_link",
+                useKey: "shiftKey",
+            };
+
+            // Configure `click_drag` plugin
+            gantt.config.click_drag = {
+                callback: onDragEnd,
+                singleRow: true,
+                useKey: "ctrlKey",
+            };
+            // Define the standard callback way then redirect to controller
+            function onDragEnd(startPoint, endPoint, startDate, endDate, tasksBetweenDates, tasksInRow) {
+                self.trigger_up('gantt_drag_end', {
+                    startDate: startDate,
+                    endDate: endDate,
+                    tasksInRow: tasksInRow,
+                });
+            };
+
+            // Configure `fullscreen` plugin
+            gantt.ext.fullscreen.getFullscreenElement = function () {
+                return gantt_root;
+            }
+
             // Set locale (lang) from current user settings
             var context = this.getSession().user_context;
             var locale = context.lang.substring(0, 2) || 'en_US';
             gantt.i18n.setLocale(locale);
-
-            gantt.ext.fullscreen.getFullscreenElement = function () {
-                return gantt_root;
-            }
 
             gantt.init(gantt_container);
             gantt.parse(this.state.records);

@@ -16,6 +16,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             gantt_show_critical_path: '_onShowCriticalPath',
             gantt_schedule: '_onGanttSchedule',
             gantt_reload: '_onGanttReload',
+            gantt_drag_end: '_onGanttDragEnd',
         }),
         date_object: new Date(),
         init: function (parent, model, renderer, params) {
@@ -111,10 +112,10 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
         },
         _onGanttConfig: function () {
             var self = this;
-            if (this.gantt_configured) {
+            if (self.gantt_configured) {
                 return;
             }
-            this.gantt_configured = true;
+            self.gantt_configured = true;
             gantt.attachEvent('onBeforeLightbox', function (id) {
                 // todo: Change this to trigger_up from renderer !!! to avoid errors
                 var task = gantt.getTask(id);
@@ -158,20 +159,20 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             var self = this;
             var def;
 
-            if (this.criticalRendered) {
-                this.criticalRendered = false;
+            if (self.criticalRendered) {
+                self.criticalRendered = false;
                 self.renderer.undoRenderCriticalTasks();
                 return;
             }
             else {
-                this.criticalRendered = true;
+                self.criticalRendered = true;
             }
 
-            this._disableAllButtons();
+            self._disableAllButtons();
             def = self.model.getCriticalPath().then(function (result) {
                 self.renderer.renderCriticalTasks(result);
             });
-            def.always(this._enableAllButtons.bind(this));
+            def.always(self._enableAllButtons.bind(self));
         },
         _disableAllButtons: function () {
             this.renderer.disableAllButtons();
@@ -181,7 +182,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
         },
         _onGanttSchedule: function () {
             var self = this;
-            this.model.schedule().then(function () {
+            self.model.schedule().then(function () {
                 self.update({ reload: true });
                 self.renderer.renderGantt();
             });
@@ -189,6 +190,37 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
         _onGanttReload: function () {
             var self = this;
             self.update({ reload: true });
+        },
+        /**
+         * todo
+         *
+         * @private
+         * @param {OdooEvent} event
+         */
+        _onGanttDragEnd: function (event) {
+            var self = this;
+            if (event.data.tasksInRow.length === 1) {
+                var task = event.data.tasksInRow[0];
+                if (task.unscheduled) {
+                    task.unscheduled = false;
+                    var formatFunc = gantt.date.date_to_str("%d-%m-%Y %H:%i");
+                    task.start_date = event.data.startDate;
+                    task.end_date = event.data.endDate;
+                    task.start_date = gantt.roundDate(task.start_date);
+                    task.end_date = gantt.roundDate(task.end_date);
+                    task.duration = gantt.calculateDuration(task);
+                    self.model.writeTask({
+                        id: task.id,
+                        start_date: formatFunc(task.start_date),
+                        end_date:  formatFunc(task.end_date),
+                        duration: task.duration,
+                    });
+                    self.renderer.renderGantt();
+                    // TODO: select the newly created task to force view focus
+                    // on, because when the horizontal scrollbar is active, the
+                    // gantt rendering reset its position
+                }
+            }
         },
     });
     return GanttController;
