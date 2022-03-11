@@ -196,7 +196,13 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                             { unit: "year", step: 1, format: "%Y" }
                         ]
                     }
-                ]
+                ],
+                // https://docs.dhtmlx.com/gantt/samples/03_scales/14_scale_zoom_by_wheelmouse.html
+                useKey: "ctrlKey",
+                trigger: "wheel",
+                element: function(){
+                    return gantt.$root.querySelector(".gantt_task");
+                }
             };
             gantt.ext.zoom.init(zoomConfig);
             gantt.ext.zoom.setLevel("week");
