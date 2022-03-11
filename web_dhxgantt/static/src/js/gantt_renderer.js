@@ -2,6 +2,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
     "use strict";
 
     var AbstractRenderer = require('web.AbstractRenderer');
+    var session = require('web.session');
     var core = require('web.core');
 
     var _lt = core._lt;
@@ -200,7 +201,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 // https://docs.dhtmlx.com/gantt/samples/03_scales/14_scale_zoom_by_wheelmouse.html
                 useKey: "ctrlKey",
                 trigger: "wheel",
-                element: function(){
+                element: function () {
                     return gantt.$root.querySelector(".gantt_task");
                 }
             };
@@ -222,6 +223,12 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
             gantt.templates.task_row_class = function (start, end, task) {
                 return "";
+            };
+
+            gantt.templates.leftside_text = function (start, end, task) {
+                if (session.debug) {
+                    return "ID: #" + task.id;
+                }
             };
 
             // https://docs.dhtmlx.com/gantt/api__gantt_rightside_text_template.html
@@ -246,6 +253,11 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     res += " " + minutes + _lt(" minute(s)");
                 }
                 return res.trim();
+            };
+
+            gantt.templates.progress_text = function (start, end, task) {
+                // TODO: Replace style with a css class
+                return "<span style='text-align:left; display:inline-block; width:90%;'>" + Math.round(task.progress * 100) + "% </span>";
             };
 
             this._updateIgnoreTime();
