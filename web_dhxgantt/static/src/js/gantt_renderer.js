@@ -38,14 +38,23 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.config.skip_off_time = false;
             gantt.config.drag_progress = params.drag_progress;
             gantt.config.drag_project = true;
+            gantt.config.show_links = true;
+            gantt.config.drag_links = false;
 
+            var renderColumnTitle = function (task) {
+                // TODO: add image when available (current user)
+                return "<b>" + task.columnTitle + "</b>";
+            };
 
             // https://docs.dhtmlx.com/gantt/desktop__specifying_columns.html
             // Note that `resize` with `config.grid_resize` is a PRO edition
             // functionality
             gantt.config.columns = [
                 // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
-                { name: "columnTitle", label: "Title", tree: true, width: 160, min_width: 110 },
+                {
+                    name: "columnTitle", label: "Title", tree: true, width: 160, min_width: 110,
+                    template: renderColumnTitle,
+                },
                 { name: "start_date", align: "center", resize: true },
                 { name: "duration", label: "Dur.", align: "right", width: 60 },
             ]

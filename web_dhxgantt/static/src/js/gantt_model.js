@@ -23,6 +23,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.fields = params.fields;
             this.modelName = params.modelName;
             this.linkModelName = params.linkModelName;
+            this.parentModelName = params.parentModelName;
 
             // Store field names mapping (params are read from arch in
             // gantt_view.js)
@@ -132,15 +133,14 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
             var ganttGroups = [];
             var data = [];
-            var parent_ids = [];
-            var parent_model_name = false;
+            var parentIDs = [];
             // todo: convert date from utc to mgt or wtever
 
             // Create gantt-projects from groups
             for (let i = 0; i < groupBy.length; i++) {
-                var field = groupBy[i];
 
                 groups.forEach(function (resGroup) {
+                    var field = groupBy[i];
 
                     var groupTemplate = {
                         id: _.uniqueId(field + "_js_"),
@@ -183,6 +183,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                         if (Array.isArray(byValue) && field in self.fields) {
                             group.modelName = self.fields[field].relation || '';
                             group.modelId = byValue[0] || 0;
+                            // Populate parent arrays used to fullfill group
+                            // data (start_date, end_date, etc.)
+                            if (group.modelName == self.parentModelName) {
+                                parentIDs.push(group.modelId);
+                            }
                         }
                         ganttGroups.push(group);
                         data.push(group);
@@ -194,33 +199,34 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 });
             }
 
-            // self._rpc({
-            //     model: parent_model_name,
-            //     method: 'read',
-            //     args: [
-            //         parent_ids,
-            //         self._getParentFields(),
-            //     ],
-            //     context: this.context,
-            // }).then(function (parent_records) {
-            //     parent_records.forEach(function (rec) {
-            //         var parent = parents.find(function (element) {
-            //             if (element.modelId == rec.id) {
-            //                 return element;
-            //             }
-            //         });
-            //         if (parent) {
-            //             var date = self.parseDate(rec, self.parent_map.date_start);
-            //             if (date) {
-            //                 parent.start_date = date;
-            //             }
-            //             var date = self.parseDate(rec, self.parent_map.date_stop);
-            //             if (date) {
-            //                 parent.end_date = date;
-            //             }
-            //         }
-            //     });
-            // });
+            // Query group data
+            self._rpc({
+                model: self.parentModelName,
+                method: 'read',
+                args: [
+                    parentIDs,
+                    self._getParentFields(),
+                ],
+                context: this.context,
+            }).then(function (parentRecords) {
+                parentRecords.forEach(function (rec) {
+                    var group = ganttGroups.find(function (element) {
+                        if (element.modelId == rec.id && element.modelName == self.parentModelName) {
+                            return element;
+                        }
+                    });
+                    if (group) {
+                        var date = self.parseDate(rec, self.parent_map.date_start);
+                        if (date) {
+                            group.start_date = date;
+                        }
+                        var date = self.parseDate(rec, self.parent_map.date_stop);
+                        if (date) {
+                            group.end_date = date;
+                        }
+                    }
+                });
+            });
 
             self.res_ids = [];
             var links = [];
@@ -319,7 +325,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     values[self.task_map.duration] = data.duration * 60 * 7;
                 }
             }
-            
+
             var backward = false;
             var formatFunc = gantt.date.str_to_date("%d-%m-%Y %H:%i");
             if ('start_date' in data) {
