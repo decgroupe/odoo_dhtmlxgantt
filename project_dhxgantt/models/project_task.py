@@ -11,7 +11,8 @@ _logger = logging.getLogger(__name__)
 
 
 class ProjectTask(models.Model):
-    _inherit = "project.task"
+    _inherit = ['project.task', 'gantt.task.mixin']
+    _name = 'project.task'
 
     planned_duration = fields.Integer(
         'Duration',
@@ -73,7 +74,7 @@ class ProjectTask(models.Model):
 
     @api.multi
     def update_gantt_schedule(self, backward=False):
-        res = []
+        res = super().update_gantt_schedule(backward)
         if not 'gantt_scheduling' in self.env.context:
             for rec in self:
                 bypass_this = False
