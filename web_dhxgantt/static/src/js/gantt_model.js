@@ -57,14 +57,28 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         },
         _getFields: function () {
             var self = this;
-            var values = Object.keys(self.task_map).map(function (key) {
+            var values = Object.keys(self.task_map).filter(function (key) {
+                let field = self.task_map[key];
+                // Do not include fields not defined in the xml view
+                if (field === undefined) {
+                    return false;
+                };
+                return true;
+            }).map(function (key) {
                 return self.task_map[key];
             });
             return values;
         },
         _getParentFields: function () {
             var self = this;
-            var values = Object.keys(self.parent_map).map(function (key) {
+            var values = Object.keys(self.parent_map).filter(function (key) {
+                let field = self.parent_map[key];
+                // Do not include fields not defined in the xml view
+                if (field === undefined) {
+                    return false;
+                };
+                return true;
+            }).map(function (key) {
                 return self.parent_map[key];
             });
             return values;
@@ -199,34 +213,36 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 });
             }
 
-            // Query group data
-            self._rpc({
-                model: self.parentModelName,
-                method: 'read',
-                args: [
-                    parentIDs,
-                    self._getParentFields(),
-                ],
-                context: this.context,
-            }).then(function (parentRecords) {
-                parentRecords.forEach(function (rec) {
-                    var group = ganttGroups.find(function (element) {
-                        if (element.modelId == rec.id && element.modelName == self.parentModelName) {
-                            return element;
+            // Query group data (only if parent model is set in the xml view)
+            if (self.parentModelName !== undefined) {
+                self._rpc({
+                    model: self.parentModelName,
+                    method: 'read',
+                    args: [
+                        parentIDs,
+                        self._getParentFields(),
+                    ],
+                    context: this.context,
+                }).then(function (parentRecords) {
+                    parentRecords.forEach(function (rec) {
+                        var group = ganttGroups.find(function (element) {
+                            if (element.modelId == rec.id && element.modelName == self.parentModelName) {
+                                return element;
+                            }
+                        });
+                        if (group) {
+                            var date = self.parseDate(rec, self.parent_map.date_start);
+                            if (date) {
+                                group.start_date = date;
+                            }
+                            var date = self.parseDate(rec, self.parent_map.date_stop);
+                            if (date) {
+                                group.end_date = date;
+                            }
                         }
                     });
-                    if (group) {
-                        var date = self.parseDate(rec, self.parent_map.date_start);
-                        if (date) {
-                            group.start_date = date;
-                        }
-                        var date = self.parseDate(rec, self.parent_map.date_stop);
-                        if (date) {
-                            group.end_date = date;
-                        }
-                    }
                 });
-            });
+            }
 
             self.res_ids = [];
             var links = [];
@@ -255,22 +271,31 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 }
 
                 task.owner = rec[self.task_map.owner][1];
-                task.progress = rec[self.task_map.progress] / 100.0;
-                task.open = rec[self.task_map.open];
-                task.links = rec[self.task_map.links];
+                if (self.task_map.progress) {
+                    task.progress = rec[self.task_map.progress] / 100.0;
+                }
+                if (self.task_map.open) {
+                    task.open = rec[self.task_map.open];
+                }
+                if (self.task_map.links) {
+                    task.links = rec[self.task_map.links];
+                    links.push.apply(links, JSON.parse(task.links))
+                }
                 task.columnTitle = task.owner || _lt("Unassigned");
 
-                var owner_id = rec[self.task_map.owner][0];
-                if (!(owner_id in css_classes)) {
-                    var idx = 1 + Object.keys(css_classes).length % css_classes_length;
-                    if (rec[self.task_map.css_class]) {
-                        css_classes[owner_id] = rec[self.task_map.css_class] + " ";
-                    } else {
-                        css_classes[owner_id] = "";
+                if (self.task_map.css_class) {
+                    var owner_id = rec[self.task_map.owner][0];
+                    if (!(owner_id in css_classes)) {
+                        var idx = 1 + Object.keys(css_classes).length % css_classes_length;
+                        if (rec[self.task_map.css_class]) {
+                            css_classes[owner_id] = rec[self.task_map.css_class] + " ";
+                        } else {
+                            css_classes[owner_id] = "";
+                        }
+                        css_classes[owner_id] += "o_dhx_gantt_color_" + idx;
                     }
-                    css_classes[owner_id] += "o_dhx_gantt_color_" + idx;
+                    task.css_class = css_classes[owner_id];
                 }
-                task.css_class = css_classes[owner_id];
 
                 if (gantt.config.duration_unit == "minute") {
                     task.duration = rec[self.task_map.duration];
@@ -295,7 +320,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 }
 
                 data.push(task);
-                links.push.apply(links, JSON.parse(task.links))
+
             });
             self.records = data;
             // self.links = links;
