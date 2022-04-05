@@ -52,17 +52,17 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.config.columns = [
                 // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
                 {
-                    name: "columnTitle", label: "Title", tree: true, width: 160, min_width: 110,
+                    name: "columnTitle", label: "Title", tree: true, width: 320, min_width: 110,
                     template: renderColumnTitle,
                 },
-                { name: "start_date", align: "center", resize: true },
-                { name: "duration", label: "Dur.", align: "right", width: 60 },
+                { name: "assigned_text", label: "Assign.", align: "left", width: 120 },
+                { name: "date_deadline", label: "Limit", align: "center", width: 80, resize: true },
             ]
             gantt.config.layout = {
                 css: "gantt_container",
                 cols: [
                     {
-                        width: 310,
+                        width: 520,
                         // adding horizontal scrollbar to the grid via 
                         // the scrollX attribute
                         rows: [
@@ -234,9 +234,17 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 return "";
             };
 
-            gantt.templates.leftside_text = function (start, end, task) {
-                if (session.debug) {
+            gantt.templates.task_text = function (start, end, task) {
+                if (task.type == gantt.config.types.project) {
+                    return task.text;
+                } else if (session.debug) {
                     return "ID: #" + task.id;
+                }
+            };
+
+            gantt.templates.leftside_text = function (start, end, task) {
+                if (task.type == gantt.config.types.task) {
+                    return task.text;
                 }
             };
 
@@ -260,6 +268,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 }
                 if (minutes > 0) {
                     res += " " + minutes + _lt(" minute(s)");
+                }
+                if (task.assigned_text) {
+                    res += " " + task.assigned_text
                 }
                 return res.trim();
             };

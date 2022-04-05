@@ -127,10 +127,16 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 var context = session ? session.user_context : {};
                 var res_model = self.model.modelName;
                 var res_id = task.id;
+                if (task.overrideModelName) {
+                    res_model = task.overrideModelName;
+                }
+                if (task.overrideModelId) {
+                    res_id = task.overrideModelId;
+                }
                 if (task.isGroup) {
                     res_model = task.modelName;
                     res_id = task.modelId;
-                }
+                } 
                 if (res_model && res_id) {
                     self.form_dialog = new dialogs.FormViewDialog(self, {
                         res_model: res_model,
@@ -215,10 +221,12 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                         end_date:  formatFunc(task.end_date),
                         duration: task.duration,
                     });
+                    var scroll = gantt.getScrollState();
                     self.renderer.renderGantt();
+                    gantt.scrollTo(scroll.x, scroll.y);
                     // TODO: select the newly created task to force view focus
-                    // on, because when the horizontal scrollbar is active, the
-                    // gantt rendering reset its position
+                    // on, because when the horizontal or vertical scrollbar is
+                    // active, the gantt rendering reset its position
                 }
             }
         },

@@ -29,16 +29,18 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             // gantt_view.js)
             this.task_map = {}
             this.task_map.identifier = params.identifier;
-            this.task_map.text = params.text;
+            this.task_map.task_text = params.task_text;
             this.task_map.date_start = params.date_start;
             this.task_map.date_stop = params.date_stop;
+            this.task_map.date_deadline = params.date_deadline;
             this.task_map.duration = params.duration;
             this.task_map.progress = params.progress;
             this.task_map.open = params.open;
             this.task_map.links = params.links;
             this.task_map.parent = params.parent;
-            this.task_map.owner = params.owner;
+            this.task_map.column_title = params.column_title;
             this.task_map.css_class = params.css_class;
+            this.task_map.assigned_text = params.assigned_text;
 
             this.parent_map = {}
             this.parent_map.date_start = params.parent_date_start;
@@ -142,6 +144,92 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             }
             return false;
         },
+        create_task: function (rec, ganttGroups, groupBy, links, css_classes) {
+            const CSS_CLASSES_LENGTH = 28;
+            var self = this;
+
+            var task = {};
+            task.id = rec[self.task_map.identifier];
+            task.text = rec[self.task_map.task_text];
+            task.type = gantt.config.types.task;
+
+            // Set tasks without valid dates as unscheduled
+            // they can be hide using `show_unscheduled=False`
+            if (rec[self.task_map.date_start] == false
+                || rec[self.task_map.date_stop] == false
+                || rec[self.task_map.date_start] == rec[self.task_map.date_stop]) {
+                task.unscheduled = true;
+            } else {
+                task.start_date = self.parseDate(rec, self.task_map.date_start);
+                task.end_date = self.parseDate(rec, self.task_map.date_stop);
+            }
+
+            if (self.task_map.date_deadline) {
+                task.date_deadline = self.parseDate(rec, self.task_map.date_deadline);
+            }
+
+            if (Array.isArray(rec[self.task_map.column_title])) {
+                task.column_title = rec[self.task_map.column_title][1];
+            } else {
+                task.column_title = rec[self.task_map.column_title];
+            }
+            task.columnTitle = task.column_title || _lt("Unassigned");
+
+            if (self.task_map.progress) {
+                task.progress = rec[self.task_map.progress] / 100.0;
+            }
+            if (self.task_map.open) {
+                task.open = rec[self.task_map.open];
+            }
+
+            if (gantt.config.duration_unit == "minute") {
+                task.duration = rec[self.task_map.duration];
+            } else if (gantt.config.duration_unit == "hour") {
+                task.duration = rec[self.task_map.duration] / 60;
+            } else if (gantt.config.duration_unit == "day") {
+                task.duration = rec[self.task_map.duration] / 60 / 7;
+            }
+
+            // Retrieve and set parent from already created project/groups
+            // 1 - Build groupBy for this record
+            var recGroupBy = {};
+            for (let j = 0; j < groupBy.length; j++) {
+                var field = groupBy[j];
+                var value = rec[field];
+                recGroupBy[field] = value;
+            }
+            // 2 - Retrieve its parent with this groupBy
+            var parent = self.findGroup(ganttGroups, recGroupBy);
+            if (parent) {
+                task.parent = parent.id;
+            }
+
+            if (self.task_map.links) {
+                task.links = rec[self.task_map.links];
+                links.push.apply(links, JSON.parse(task.links))
+            }
+
+            // Set task color index from parent ID
+            if (self.task_map.css_class) {
+                var unique_id = task.parent;
+                if (!(unique_id in css_classes)) {
+                    var idx = 1 + Object.keys(css_classes).length % CSS_CLASSES_LENGTH;
+                    if (rec[self.task_map.css_class]) {
+                        css_classes[unique_id] = rec[self.task_map.css_class] + " ";
+                    } else {
+                        css_classes[unique_id] = "";
+                    }
+                    css_classes[unique_id] += "o_dhx_gantt_color_" + idx;
+                }
+                task.css_class = css_classes[unique_id];
+            }
+
+            if (self.task_map.assigned_text) {
+                task.assigned_text = rec[self.task_map.assigned_text];
+            }
+
+            return task;
+        },
         convertData: function (records, groups, groupBy) {
             var self = this;
 
@@ -162,6 +250,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                         isGroup: true,
                         open: true,
                         groupBy: {},
+                        // Use the field name as default value for the column title
                         columnTitle: field,
                     }
 
@@ -181,6 +270,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                         groupTemplate.columnTitle = groupTemplate.text;
                     } else {
                         groupTemplate.text = byValue;
+                        groupTemplate.columnTitle = byValue;
                     }
 
                     var group = self.findGroup(ganttGroups, groupTemplate.groupBy);
@@ -247,81 +337,15 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             self.res_ids = [];
             var links = [];
             var css_classes = {}
-            const css_classes_length = 28;
 
             // Create gantt-tasks from records
             records.forEach(function (rec) {
-
                 self.res_ids.push(rec[self.task_map.identifier]);
-
-                var task = {};
-                task.id = rec[self.task_map.identifier];
-                task.text = rec[self.task_map.text];
-                task.type = gantt.config.types.type_task;
-
-                // Set tasks without valid dates as unscheduled
-                // they can be hide using `show_unscheduled=False`
-                if (rec[self.task_map.date_start] == false
-                    || rec[self.task_map.date_stop] == false
-                    || rec[self.task_map.date_start] == rec[self.task_map.date_stop]) {
-                    task.unscheduled = true;
-                } else {
-                    task.start_date = self.parseDate(rec, self.task_map.date_start);
-                    task.end_date = self.parseDate(rec, self.task_map.date_stop);
-                }
-
-                task.owner = rec[self.task_map.owner][1];
-                if (self.task_map.progress) {
-                    task.progress = rec[self.task_map.progress] / 100.0;
-                }
-                if (self.task_map.open) {
-                    task.open = rec[self.task_map.open];
-                }
-                if (self.task_map.links) {
-                    task.links = rec[self.task_map.links];
-                    links.push.apply(links, JSON.parse(task.links))
-                }
-                task.columnTitle = task.owner || _lt("Unassigned");
-
-                if (self.task_map.css_class) {
-                    var owner_id = rec[self.task_map.owner][0];
-                    if (!(owner_id in css_classes)) {
-                        var idx = 1 + Object.keys(css_classes).length % css_classes_length;
-                        if (rec[self.task_map.css_class]) {
-                            css_classes[owner_id] = rec[self.task_map.css_class] + " ";
-                        } else {
-                            css_classes[owner_id] = "";
-                        }
-                        css_classes[owner_id] += "o_dhx_gantt_color_" + idx;
-                    }
-                    task.css_class = css_classes[owner_id];
-                }
-
-                if (gantt.config.duration_unit == "minute") {
-                    task.duration = rec[self.task_map.duration];
-                } else if (gantt.config.duration_unit == "hour") {
-                    task.duration = rec[self.task_map.duration] / 60;
-                } else if (gantt.config.duration_unit == "day") {
-                    task.duration = rec[self.task_map.duration] / 60 / 7;
-                }
-
-                // Retrieve and set parent from already created project/groups
-                // 1 - Build groupBy for this record
-                var recGroupBy = {};
-                for (let j = 0; j < groupBy.length; j++) {
-                    var field = groupBy[j];
-                    var value = rec[field];
-                    recGroupBy[field] = value;
-                }
-                // 2 - Retrieve its parent with this groupBy
-                var parent = self.findGroup(ganttGroups, recGroupBy);
-                if (parent) {
-                    task.parent = parent.id;
-                }
+                var task = self.create_task(rec, ganttGroups, groupBy, links, css_classes);
 
                 data.push(task);
-
             });
+
             self.records = data;
             // self.links = links;
         },

@@ -172,16 +172,21 @@ class ProjectTask(models.Model):
                     res = task_id
         return res
 
+    @api.multi
+    def _get_gantt_class(self):
+        self.ensure_one()
+        res = super()._get_gantt_class()
+        if self.stage_id and self.stage_id.gantt_class:
+            css_name = self.stage_id.gantt_class.replace(' ', '_').lower()
+            if css_name:
+                res += ' o_dhx_gantt_task_stage_{}'.format(
+                    css_name
+                )
+        return res
+
     @api.depends('stage_id.gantt_class')
     def _compute_gantt_class(self):
-        for rec in self:
-            rec.gantt_class = "decoration-info"
-            if rec.stage_id and rec.stage_id.gantt_class:
-                css_name = rec.stage_id.gantt_class.replace(' ', '_').lower()
-                if css_name:
-                    rec.gantt_class += ' o_dhx_gantt_task_stage_{}'.format(
-                        css_name
-                    )
+        super()._compute_gantt_class()
 
     @api.depends('upstream_task_ids')
     def _compute_recursive_upstream_task_ids(self):
