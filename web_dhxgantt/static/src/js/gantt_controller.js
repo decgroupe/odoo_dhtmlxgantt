@@ -119,7 +119,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             gantt.attachEvent('onBeforeLightbox', function (id) {
                 // todo: Change this to trigger_up from renderer !!! to avoid errors
                 var task = gantt.getTask(id);
-                var title = _lt('Open: ') + task.text;
+                var title = _lt('Open: ') + task.text_leftside;
                 if (self.form_dialog && !self.form_dialog.isDestroyed()) {
                     return false;
                 }

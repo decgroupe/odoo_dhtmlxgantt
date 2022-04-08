@@ -43,7 +43,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
             var renderColumnTitle = function (task) {
                 // TODO: add image when available (current user)
-                return "<b>" + task.columnTitle + "</b>";
+                return task.columnTitle;
             };
 
             // https://docs.dhtmlx.com/gantt/desktop__specifying_columns.html
@@ -55,7 +55,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     name: "columnTitle", label: "Title", tree: true, width: 320, min_width: 110,
                     template: renderColumnTitle,
                 },
-                { name: "assigned_text", label: "Assign.", align: "left", width: 120 },
+                { name: "text_rightside", label: "Assign.", align: "left", width: 120 },
                 { name: "date_deadline", label: "Limit", align: "center", width: 80, resize: true },
             ]
             gantt.config.layout = {
@@ -235,16 +235,21 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             };
 
             gantt.templates.task_text = function (start, end, task) {
-                if (task.type == gantt.config.types.project) {
-                    return task.text;
-                } else if (session.debug) {
-                    return "ID: #" + task.id;
+                var res = [];
+                if (task.type == gantt.config.types.task) {
+                    if (session.debug) {
+                        res.push(`(ID: #${task.id})`);
+                    }
                 }
+                if (task.text) {
+                    res.push(task.text);
+                }
+                return res.join("<br/>");
             };
 
             gantt.templates.leftside_text = function (start, end, task) {
-                if (task.type == gantt.config.types.task) {
-                    return task.text;
+                if (task.type == gantt.config.types.task && task.text_leftside) {
+                    return task.text_leftside;
                 }
             };
 
@@ -269,8 +274,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 if (minutes > 0) {
                     res += " " + minutes + _lt(" minute(s)");
                 }
-                if (task.assigned_text) {
-                    res += " " + task.assigned_text
+                if (task.text_rightside) {
+                    res += " " + task.text_rightside
                 }
                 return res.trim();
             };
@@ -279,6 +284,15 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 // TODO: Replace style with a css class
                 return "<span style='text-align:left; display:inline-block; width:90%;'>" + Math.round(task.progress * 100) + "% </span>";
             };
+
+            gantt.templates.tooltip_text = function (start, end, task) {
+                console.log(self.state.fields);
+                if (task.type == gantt.config.types.task) {
+                    return task.tooltipTextFn(gantt.templates.tooltip_date_format(start), gantt.templates.tooltip_date_format(end));
+                } else {
+                    return "";
+                };
+            }
 
             this._updateIgnoreTime();
 

@@ -42,10 +42,11 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.loadParams.duration = this.arch.attrs.duration;
             this.loadParams.open = this.arch.attrs.open;
             this.loadParams.progress = this.arch.attrs.progress;
+            this.loadParams.task_text_leftside = this.arch.attrs.task_text_leftside;
             this.loadParams.task_text = this.arch.attrs.task_text;
+            this.loadParams.task_text_rightside = this.arch.attrs.task_text_rightside;
             this.loadParams.links = this.arch.attrs.links;
             this.loadParams.css_class = this.arch.attrs.css_class;
-            this.loadParams.assigned_text = this.arch.attrs.assigned_text;
             
 
             this.rendererParams.modelName = params.modelName;
