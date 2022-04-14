@@ -77,7 +77,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             // return self._load2(params).then(function () {
             //     return ;
             // });
-            this.load2();
+            this.load2(params);
 
 
             return res;
@@ -137,7 +137,9 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         load2: function (params) {
             console.log("load2");
             var self = this;
-            params = params ? params : {};
+            if (params == undefined) {
+                throw new Error(`Missing argument.`);
+            };
             self.domain = params.domain || self.domain || [];
             self.modelName = params.modelName || self.modelName;
             self.groupBy = self.defaultGroupBy;
