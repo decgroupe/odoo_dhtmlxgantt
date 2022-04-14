@@ -24,6 +24,10 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         init: function (parent, state, params) {
             this._super.apply(this, arguments);
             var self = this;
+            
+            // Set by `on_attach_callback` and unset by `on_detach_callback`
+            // to ensure that gantt rendering is done when the DOM is ready.
+            this._isInDom = false;
 
             self.modelName = params.modelName;
             self.fieldsViewInfo = params.fieldsViewInfo;
@@ -287,7 +291,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             };
 
             gantt.templates.tooltip_text = function (start, end, task) {
-                console.log(self.state.fields);
+                // console.log(self.state.fields);
                 if (task.type == gantt.config.types.task) {
                     return task.tooltipTextFn(gantt.templates.tooltip_date_format(start), gantt.templates.tooltip_date_format(end));
                 } else {
@@ -436,21 +440,33 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 gantt.collapse();
             }
         },
+        /**
+         * Called each time the renderer is attached into the DOM.
+         */
         on_attach_callback: function () {
+            this._isInDom = true;
             this.renderGantt();
         },
-
         /**
-         * Render the view
-         *
-         * @override
+         * Called each time the renderer is detached from the DOM.
+         */
+        on_detach_callback: function () {
+            this._isInDom = false;
+        },
+        /**
+         * Main entry point for the rendering.
+         * @private
+         * @override method from BasicRenderer
          * @returns {Deferred}
          */
-        _render: function () {
+        _renderView: function () {
             var self = this;
             var res = this._super.apply(this, arguments);
+            var isGrouped = !!this.state.groupedBy.length;
             res.then(function () {
-                self.renderGantt();
+                if (self._isInDom) {
+                    self.renderGantt();
+                }
             });
             return res;
         },
@@ -489,9 +505,55 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     var headerHeight = self.$('.o_dhx_gantt_header').height();
                     self.$('.o_dhx_gantt').height(rootHeight - headerHeight);
                 });
+                gantt.attachEvent('onClearAll', function () {
+                    console.log("onClearAll", arguments);
+                });
+                gantt.attachEvent('onTaskCreated', function (item) {
+                    console.log("onTaskCreated", item);
+                });
+                gantt.attachEvent('onAfterUpdate', function () {
+                    console.log("onAfterUpdate", arguments);
+                });
+                gantt.attachEvent('onBeforeUpdate', function () {
+                    console.log("onBeforeUpdate", arguments);
+                });
+                gantt.attachEvent('onParse', function () {
+                    console.log("onParse", arguments);
+                });
+                gantt.attachEvent('onBeforeParse', function () {
+                    console.log("onBeforeParse", arguments);
+                });
+                gantt.attachEvent('onAfterAdd', function () {
+                    console.log("onAfterAdd", arguments);
+                });
+                gantt.attachEvent('onDestroy', function () {
+                    console.log("onDestroy", arguments);
+                });
+                gantt.attachEvent('onClear', function () {
+                    console.log("onClear", arguments);
+                });
+                gantt.attachEvent('onDataRender', function () {
+                    console.log("onDataRender", arguments);
+                });
+                gantt.attachEvent('onGanttReady', function () {
+                    console.log("onGanttReady", arguments);
+                });
+                gantt.attachEvent('onTemplatesReady', function () {
+                    console.log("onTemplatesReady", arguments);
+                });
+                gantt.attachEvent('onReady', function () {
+                    console.log("onReady", arguments);
+                });
+                gantt.attachEvent('onScroll', function () {
+                    console.log("onScroll", arguments);
+                });
+                gantt.attachEvent('onGanttScroll', function () {
+                    console.log("onGanttScroll", arguments);
+                });
                 this.events_set = true;
             }
-            gantt.clearAll();
+            // We don't need to call `gantt.clearAll()` since the future
+            // `init` and `parse` already do it
 
             // Configure `marker` plugin
             var date_to_str = gantt.date.date_to_str(gantt.config.task_date);
@@ -537,14 +599,16 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.i18n.setLocale(locale);
 
             gantt.init(gantt_container);
+            // The `parse` method will operate a `gantt.render()`
             gantt.parse(this.state.ganttData);
-            gantt.render();
         },
         updateState: function (state, params) {
-            // this method is called by the controller when the search view is changed. we should 
-            // clear the gantt chart, and add the new tasks resulting from the search
-            var res = this._super.apply(this, arguments);
+            // This method is called by the controller when the search view is
+            // changed.
             gantt.clearAll();
+            // The `super` call will do a `_render` and  `_renderView` so we
+            // don't need to call `renderGantt` here.
+            var res = this._super.apply(this, arguments);
             return res;
         },
         disableAllButtons: function () {
