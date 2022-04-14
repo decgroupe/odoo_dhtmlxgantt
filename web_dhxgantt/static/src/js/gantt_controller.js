@@ -1,26 +1,36 @@
 odoo.define('web_dhxgantt.GanttController', function (require) {
     "use strict";
 
-    var AbstractController = require('web.AbstractController');
+    // odoo/addons/web/static/src/js/views/basic/basic_controller.js
+    var BasicController = require('web.BasicController');
     var core = require('web.core');
     var dialogs = require('web.view_dialogs');
 
     var _lt = core._lt;
 
-    var GanttController = AbstractController.extend({
-        custom_events: _.extend({}, AbstractController.prototype.custom_events, {
+    var GanttController = BasicController.extend({
+        custom_events: _.extend({}, BasicController.prototype.custom_events, {
             gantt_data_updated: '_onGanttUpdated',
             gantt_create_dp: '_onGanttCreateDataProcessor',
             gantt_attach_events: '_onGanttAttachEvents',
             gantt_config: '_onGanttConfig',
-            gantt_show_critical_path: '_onShowCriticalPath',
+            gantt_show_critical_path: '_onGanttShowCriticalPath',
             gantt_schedule: '_onGanttSchedule',
             gantt_reload: '_onGanttReload',
             gantt_drag_end: '_onGanttDragEnd',
         }),
         date_object: new Date(),
         init: function (parent, model, renderer, params) {
+            // Ensure that id is properly defined, otherwise the model load
+            // function does not return properly
+            if (!(params && params.initialState && params.initialState.id)) {
+                throw new Error("Model not loaded properly, missing 'initialState.id'");
+            }
             this._super.apply(this, arguments);
+        },
+        getContext: function () {
+            var context = this._super.apply(this, arguments);
+            return context;
         },
         _onGanttCreateDataProcessor: function (event) {
             var self = this;
@@ -160,7 +170,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 this.update(params);
             }
         },
-        _onShowCriticalPath: function () {
+        _onGanttShowCriticalPath: function () {
             event.stopPropagation();
             var self = this;
             var def;

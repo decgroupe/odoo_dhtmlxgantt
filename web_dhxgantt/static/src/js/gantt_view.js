@@ -1,21 +1,22 @@
 odoo.define('web_dhxgantt.GanttView', function (require) {
     "use strict";
 
-    var core = require('web.core');
-    var AbstractView = require('web.AbstractView');
+    // odoo/addons/web/static/src/js/views/basic/basic_view.js
+    var BasicView = require('web.BasicView');
     var GanttController = require('web_dhxgantt.GanttController');
     var GanttModel = require('web_dhxgantt.GanttModel');
     var GanttRenderer = require('web_dhxgantt.GanttRenderer');
     var viewRegistry = require('web.view_registry');
+    var core = require('web.core');
 
     var _lt = core._lt;
 
-    var GanttView = AbstractView.extend({
+    var GanttView = BasicView.extend({
         viewType: 'dhxgantt',
         groupable: true,
         display_name: _lt('Gantt'),
         icon: 'fa-tasks',
-        config: _.extend({}, AbstractView.prototype.config, {
+        config: _.extend({}, BasicView.prototype.config, {
             Controller: GanttController,
             Model: GanttModel,
             Renderer: GanttRenderer,
@@ -24,12 +25,13 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this._super.apply(this, arguments);
 
             this.loadParams.type = 'list';
-            this.loadParams.fields = this.fields;
-            this.loadParams.modelName = params.modelName;
+            // Already set in BasicView
+            // this.loadParams.fields = this.fields;
+            // this.loadParams.modelName = params.modelName;
             this.loadParams.linkModelName = this.arch.attrs.link_model_name;
             this.loadParams.parentModelName = this.arch.attrs.parent_model_name;
             this.loadParams.defaultGroupBy = this.arch.attrs.default_group_by;
-            
+
             // Save fields to read and map them with internal names
             this.loadParams.identifier = this.arch.attrs.identifier;
             this.loadParams.parent = this.arch.attrs.parent;
@@ -47,7 +49,6 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.loadParams.task_text_rightside = this.arch.attrs.task_text_rightside;
             this.loadParams.links = this.arch.attrs.links;
             this.loadParams.css_class = this.arch.attrs.css_class;
-            
 
             this.rendererParams.modelName = params.modelName;
             this.rendererParams.fieldsViewInfo = viewInfo.fields;

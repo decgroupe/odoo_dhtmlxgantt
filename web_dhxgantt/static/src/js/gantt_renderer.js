@@ -1,16 +1,17 @@
 odoo.define('web_dhxgantt.GanttRenderer', function (require) {
     "use strict";
 
-    var AbstractRenderer = require('web.AbstractRenderer');
+    // odoo/addons/web/static/src/js/views/basic/basic_renderer.js
+    var BasicRenderer = require('web.BasicRenderer');
     var session = require('web.session');
     var core = require('web.core');
 
     var _lt = core._lt;
 
-    var GanttRenderer = AbstractRenderer.extend({
+    var GanttRenderer = BasicRenderer.extend({
         template: "web_dhxgantt.gantt_view",
         date_object: new Date(),
-        events: _.extend({}, AbstractRenderer.prototype.events, {
+        events: _.extend({}, BasicRenderer.prototype.events, {
             'click button.o_dhx_critical_path': '_onClickCriticalPath',
             'click button.o_dhx_reschedule': '_onClickReschedule',
             'click button.o_dhx_show_all': '_onClickShowAll',
@@ -438,6 +439,22 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         on_attach_callback: function () {
             this.renderGantt();
         },
+
+        /**
+         * Render the view
+         *
+         * @override
+         * @returns {Deferred}
+         */
+        _render: function () {
+            var self = this;
+            var res = this._super.apply(this, arguments);
+            res.then(function () {
+                self.renderGantt();
+            });
+            return res;
+        },
+
         renderGantt: function () {
             var self = this;
             var gantt_root = this.$('.o_dhx_gantt_root').get(0);
@@ -520,16 +537,14 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.i18n.setLocale(locale);
 
             gantt.init(gantt_container);
-            gantt.parse(this.state.records);
-        },
-        _onUpdate: function () {
+            gantt.parse(this.state.ganttData);
+            gantt.render();
         },
         updateState: function (state, params) {
             // this method is called by the controller when the search view is changed. we should 
             // clear the gantt chart, and add the new tasks resulting from the search
             var res = this._super.apply(this, arguments);
             gantt.clearAll();
-            this.renderGantt();
             return res;
         },
         disableAllButtons: function () {

@@ -1,25 +1,31 @@
 odoo.define('web_dhxgantt.GanttModel', function (require) {
     "use strict";
 
-    var AbstractModel = require('web.AbstractModel');
+    // odoo/addons/web/static/src/js/views/basic/basic_model.js
+    var BasicModel = require('web.BasicModel');
     var core = require('web.core');
 
     var _lt = core._lt;
 
-    var GanttModel = AbstractModel.extend({
-        get: function () {
+    var GanttModel = BasicModel.extend({
+        get: function (idHandle) {
+            var res = this._super.apply(this, arguments);
+            // if (res == null) {
+            //     res = {};
+            // }
+
             // Get is called by AbstractController.update() and the result
             // is stored in `state` variable
-            var gantt_model = {
-                data: this.records,
-                links: this.links,
+            if (res && this.ganttData) {
+                res.ganttData = this.ganttData;
             }
-            var res = {
-                records: gantt_model,
-            };
+
             return res;
         },
         load: function (params) {
+            var self = this;
+            var res = this._super.apply(this, arguments);
+
             this.fields = params.fields;
             this.modelName = params.modelName;
             this.linkModelName = params.linkModelName;
@@ -47,16 +53,43 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.parent_map.date_start = params.parent_date_start;
             this.parent_map.date_stop = params.parent_date_stop;
 
+            this.ganttData = {};
+
             this.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
 
-            return this._load(params);
+
+            // var overloadedLoadPromiseResolve;
+            // var overloadedLoadPromise = new Promise(function (resolve, reject) {
+            //     overloadedLoadPromiseResolve = resolve;
+            // });
+
+            // res.then(function () {
+            //     var loadResArgs = arguments;
+            //     self._load2(params).then(function () {
+            //         return overloadedLoadPromiseResolve(loadResArgs);
+            //     });
+            // });
+
+            // return overloadedLoadPromise.then(function () {
+            //     return arguments;
+            // });
+
+            // return self._load2(params).then(function () {
+            //     return ;
+            // });
+            this.load2();
+
+
+            return res;
+
         },
         reload: function (id, params) {
             var self = this;
             if ('groupBy' in params === false) {
                 params.groupBy = self.groupBy;
             }
-            return self._load(params);
+            self.load2(params);
+            return self._load2(id);
         },
         _getFields: function () {
             var self = this;
@@ -93,7 +126,16 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 self.task_map.date_stop,
             ]
         },
-        _load: function (params) {
+
+        _load: function (dataPoint, options) {
+            var self = this;
+            var res = self._super.apply(self, arguments);
+            return res.then(function () {
+                return self._load2(dataPoint, options);
+            });
+        },
+        load2: function (params) {
+            console.log("load2");
             var self = this;
             params = params ? params : {};
             self.domain = params.domain || self.domain || [];
@@ -101,7 +143,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             self.groupBy = self.defaultGroupBy;
             if (params.groupBy && params.groupBy.length > 0) {
                 self.groupBy = params.groupBy;
-            }
+            };
+        },
+        _load2: function (dataPoint, options) {
+            console.log("_load2");
+            var self = this;
             return self._rpc({
                 model: self.modelName,
                 method: 'read_group',
@@ -372,8 +418,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 data.push(task);
             });
 
-            self.records = data;
-            // self.links = links;
+            self.ganttData.data = data;
+            self.ganttData.links = links;
         },
         writeTask: function (data) {
             var self = this;
