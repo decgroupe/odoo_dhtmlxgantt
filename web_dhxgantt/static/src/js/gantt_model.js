@@ -83,13 +83,25 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return res;
 
         },
+        /**
+         * Reload all data for a given resource. At any time there is at most one
+         * reload operation active.
+         * Note that the `params` argument is sometimes called `options`
+         *
+         * @param {string} id local id for a resource
+         * @param {Object} [params]
+         * @param {boolean} [params.keepChanges=false] if true, doesn't discard the
+         *   changes on the record before reloading it
+         * @returns {Deferred<string>} resolves to the id of the resource
+         */
         reload: function (id, params) {
             var self = this;
+            var res = self._super.apply(self, arguments);
             if ('groupBy' in params === false) {
                 params.groupBy = self.groupBy;
             }
             self.load2(params);
-            return self._load2(id);
+            return res;
         },
         _getFields: function () {
             var self = this;
@@ -129,11 +141,17 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
         _load: function (dataPoint, options) {
             var self = this;
-            var res = self._super.apply(self, arguments);
-            return res.then(function () {
-                return self._load2(dataPoint, options);
+            var _loadBasic = self._super.apply(self, arguments);
+            return _loadBasic.then(function () {
+                // Keep a copy of the original result values
+                var _loadBasicResult = arguments;
+                return self._load2(dataPoint, options).then(function () {
+                    // Return original result values 
+                    return _loadBasicResult;
+                });
             });
         },
+
         load2: function (params) {
             console.log("load2");
             var self = this;
@@ -169,6 +187,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     domain: self.domain,
                 }).then(function (records) {
                     self.convertData(records, groups, self.groupBy);
+                    // return dataPoint;
                 });
             });
         },

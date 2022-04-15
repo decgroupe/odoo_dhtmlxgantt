@@ -609,6 +609,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // The `super` call will do a `_render` and  `_renderView` so we
             // don't need to call `renderGantt` here.
             var res = this._super.apply(this, arguments);
+            this.isGrouped = state.groupedBy.length > 0;
             return res;
         },
         disableAllButtons: function () {

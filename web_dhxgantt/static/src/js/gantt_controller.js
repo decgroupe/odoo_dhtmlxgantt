@@ -32,6 +32,72 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             var context = this._super.apply(this, arguments);
             return context;
         },
+
+        /**
+         * This is the main entry point for the controller. 
+         * 
+         * Note the first update is not made here but from the 
+         * controller `start` method
+         * 
+         * Changes from the search view arrive in this method, and internal
+         * changes can sometimes also call this method.  It is basically the
+         * way everything notifies the controller that something has changed.
+         *
+         * The update method is responsible for fetching necessary data, then
+         * updating the renderer and wait for the rendering to complete.
+         * 
+         * @param {Object} params will be given to the model and to the renderer
+         * @param {Object} [options]
+         * @param {boolean} [options.reload=true] if true, the model will reload data
+         *
+         * @returns {Deferred}
+         */
+        update: function (params, options) {
+            var self = this;
+            // self._updateButtons();
+            // TODO: Recreate gantt Data
+            var parentUpdateResult = self._super.apply(self, arguments);
+            return parentUpdateResult;
+        },
+
+        /**
+         * This method is called after each update or when the start method is
+         * completed.
+         *
+         * Its primary use is to be used as a hook to update all parts of the UI,
+         * besides the renderer.  For example, it may be used to enable/disable
+         * some buttons in the control panel, such as the current graph type for a
+         * graph view.
+         *
+         * @private
+         * @param {Object} state the state given by the model
+         * @returns {Deferred}
+         */
+        _update: function (state) {
+            var self = this;
+            self._createGanttDataFromCurrentState(state);
+            return self._super.apply(self, arguments);
+        },
+        _createGanttDataFromCurrentState: function (state) {
+            var self = this;
+            console.log(state.data);
+            state.ganttData = {
+                data: [],
+                links: [],
+            };
+
+            // Create gantt-tasks from records
+            state.data.forEach(function (item) {
+                // self.res_ids.push(rec[self.task_map.identifier]);
+                var task = self._createGanttTask(item);
+                state.ganttData.data.push(task);
+            });
+        },
+        _createGanttTask: function (item) {
+            var self = this;
+            var task = {};
+            return task;
+        },
         _onGanttCreateDataProcessor: function (event) {
             var self = this;
             if (this.dp_created) {
@@ -146,7 +212,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 if (task.isGroup) {
                     res_model = task.modelName;
                     res_id = task.modelId;
-                } 
+                }
                 if (res_model && res_id) {
                     self.form_dialog = new dialogs.FormViewDialog(self, {
                         res_model: res_model,
@@ -228,7 +294,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                     self.model.writeTask({
                         id: task.id,
                         start_date: formatFunc(task.start_date),
-                        end_date:  formatFunc(task.end_date),
+                        end_date: formatFunc(task.end_date),
                         duration: task.duration,
                     });
                     var scroll = gantt.getScrollState();
