@@ -75,29 +75,9 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
          */
         _update: function (state) {
             var self = this;
-            self._createGanttDataFromCurrentState(state);
             return self._super.apply(self, arguments);
         },
-        _createGanttDataFromCurrentState: function (state) {
-            var self = this;
-            console.log(state.data);
-            state.ganttData = {
-                data: [],
-                links: [],
-            };
-
-            // Create gantt-tasks from records
-            state.data.forEach(function (item) {
-                // self.res_ids.push(rec[self.task_map.identifier]);
-                var task = self._createGanttTask(item);
-                state.ganttData.data.push(task);
-            });
-        },
-        _createGanttTask: function (item) {
-            var self = this;
-            var task = {};
-            return task;
-        },
+        
         _onGanttCreateDataProcessor: function (event) {
             var self = this;
             if (this.dp_created) {

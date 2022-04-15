@@ -8,18 +8,19 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
     var _lt = core._lt;
 
     var GanttModel = BasicModel.extend({
-        get: function (idHandle) {
+        get: function (id, options) {
             var res = this._super.apply(this, arguments);
-            // if (res == null) {
-            //     res = {};
-            // }
-
             // Get is called by AbstractController.update() and the result
-            // is stored in `state` variable
-            if (res && this.ganttData) {
-                res.ganttData = this.ganttData;
+            // is stored in its `state` variable
+            // Each `get` call generate a new Object from localData
+            if (res) {
+                var element = this.localData[id];
+                // Make a reference on the existing gantt data in the 
+                // new datapoint
+                if (element.ganttData) {
+                    res.ganttData = element.ganttData;
+                }
             }
-
             return res;
         },
         load: function (params) {
@@ -53,32 +54,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             this.parent_map.date_start = params.parent_date_start;
             this.parent_map.date_stop = params.parent_date_stop;
 
-            this.ganttData = {};
-
             this.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
-
-
-            // var overloadedLoadPromiseResolve;
-            // var overloadedLoadPromise = new Promise(function (resolve, reject) {
-            //     overloadedLoadPromiseResolve = resolve;
-            // });
-
-            // res.then(function () {
-            //     var loadResArgs = arguments;
-            //     self._load2(params).then(function () {
-            //         return overloadedLoadPromiseResolve(loadResArgs);
-            //     });
-            // });
-
-            // return overloadedLoadPromise.then(function () {
-            //     return arguments;
-            // });
-
-            // return self._load2(params).then(function () {
-            //     return ;
-            // });
             this.load2(params);
-
 
             return res;
 
@@ -143,13 +120,104 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             var self = this;
             var _loadBasic = self._super.apply(self, arguments);
             return _loadBasic.then(function () {
-                // Keep a copy of the original result values
-                var _loadBasicResult = arguments;
-                return self._load2(dataPoint, options).then(function () {
-                    // Return original result values 
-                    return _loadBasicResult;
-                });
+                self._createGanttDataFromLastLoad(dataPoint);
+                return arguments;
             });
+        },
+
+        _createGanttDataFromLastLoad: function (state) {
+            var self = this;
+            state.ganttData = {
+                items: [],
+                links: [],
+            };
+            console.log(state.data);
+            // Create gantt items (tasks) from records
+            state.data.forEach(function (handle) {
+                // self.res_ids.push(rec[self.task_map.identifier]);
+                var dataPoint = self.get(handle);
+                var item = self._createGanttItem(dataPoint);
+                state.ganttData.items.push(item);
+            });
+        },
+
+        _createGanttItem: function (dataPoint) {
+            var self = this;
+            var item = {
+                // Keep a refence on original dataPoint
+                id: dataPoint.id,
+                type: gantt.config.types.task,
+            };
+
+
+            // Field name mapping defined in the XML gantt view
+            var mapping = self.task_map;
+            // Record data
+            var rec = dataPoint.data;
+
+            // Set items without valid dates as unscheduled
+            // they can be hide using `show_unscheduled=False`
+            if (rec[mapping.date_start] == false
+                || rec[mapping.date_stop] == false
+                || rec[mapping.date_start] == rec[mapping.date_stop]) {
+                item.unscheduled = true;
+            } else {
+                item.start_date = self._convertMomentDateToGanttDate(rec, mapping.date_start);
+                item.end_date = self._convertMomentDateToGanttDate(rec, mapping.date_stop);
+            }
+
+            // TODO: Convert duration to a function in order have it fully
+            // updated on view changes (if possible)
+            if (mapping.duration) {
+                if (gantt.config.duration_unit == "minute") {
+                    item.duration = rec[mapping.duration];
+                } else if (gantt.config.duration_unit == "hour") {
+                    item.duration = rec[mapping.duration] / 60;
+                } else if (gantt.config.duration_unit == "day") {
+                    item.duration = rec[mapping.duration] / 60 / 7;
+                }
+            }
+
+            if (mapping.task_text) {
+                item.text = rec[mapping.task_text];
+            }
+
+            // Set main title visible in the left column
+            if (Array.isArray(rec[mapping.column_title])) {
+                item.columnTitle = rec[mapping.column_title][1];
+            } else {
+                item.columnTitle = rec[mapping.column_title];
+            }
+
+            // Set item left text (before progress bar)
+            if (mapping.task_text_leftside) {
+                item.textLeftSide = rec[mapping.task_text_leftside];
+            }
+
+            // Set item right text (after progress bar)
+            if (mapping.task_text_rightside) {
+                item.textRightside = rec[mapping.task_text_rightside];
+            }
+
+            if (mapping.progress) {
+                item.progress = rec[mapping.progress] / 100.0;
+            }
+            if (mapping.open) {
+                item.open = rec[mapping.open];
+            }
+
+            return item;
+        },
+
+        _convertMomentDateToGanttDate(rec, date_name) {
+            var formatFunc = gantt.date.str_to_date("%Y-%m-%d %H:%i:%s", true);
+            var date;
+            if (rec[date_name]) {
+                date = formatFunc(rec[date_name].format("YYYY-MM-DD H:mm:ss"));
+            } else {
+                date = false;
+            }
+            return date;
         },
 
         load2: function (params) {

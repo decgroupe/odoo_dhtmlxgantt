@@ -24,7 +24,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         init: function (parent, state, params) {
             this._super.apply(this, arguments);
             var self = this;
-            
+
             // Set by `on_attach_callback` and unset by `on_detach_callback`
             // to ensure that gantt rendering is done when the DOM is ready.
             this._isInDom = false;
@@ -290,10 +290,14 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 return "<span style='text-align:left; display:inline-block; width:90%;'>" + Math.round(task.progress * 100) + "% </span>";
             };
 
-            gantt.templates.tooltip_text = function (start, end, task) {
+            gantt.templates.tooltip_text = function (start, end, item) {
                 // console.log(self.state.fields);
-                if (task.type == gantt.config.types.task) {
-                    return task.tooltipTextFn(gantt.templates.tooltip_date_format(start), gantt.templates.tooltip_date_format(end));
+                if (item.type == gantt.config.types.task) {
+                    self.renderItemTooltip(
+                        item,
+                        gantt.templates.tooltip_date_format(start),
+                        gantt.templates.tooltip_date_format(end)
+                    );
                 } else {
                     return "";
                 };
@@ -470,7 +474,21 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             });
             return res;
         },
-
+        renderItemTooltip: function (item, start, end) {
+            var res = []
+            if (item.textLeftSide) {
+                res.push(item.textLeftSide);
+            }
+            if (item.textRightside) {
+                res.push(item.textRightside);
+            }
+            res.push("<b>" + _lt("Start date:") + "</b> " + start);
+            res.push("<b>" + _lt("End date:") + "</b> " + end);
+            if (item.text) {
+                res.push(item.text);
+            }
+            return res.join("<br/>");
+        },
         renderGantt: function () {
             var self = this;
             var gantt_root = this.$('.o_dhx_gantt_root').get(0);
@@ -599,8 +617,17 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.i18n.setLocale(locale);
 
             gantt.init(gantt_container);
-            // The `parse` method will operate a `gantt.render()`
-            gantt.parse(this.state.ganttData);
+
+            if (this.state.ganttData && this.state.ganttData.items) {
+                // self.state.ganttData.items.forEach(function (item) {
+                //     item.color = "";
+                // });
+                // The library needs data in a `tasks` variable so we just create
+                // a reference on it (not a copy).
+                this.state.ganttData.tasks = this.state.ganttData.items;
+                // The `parse` method will operate a `gantt.render()`
+                gantt.parse(this.state.ganttData);
+            }
         },
         updateState: function (state, params) {
             // This method is called by the controller when the search view is
