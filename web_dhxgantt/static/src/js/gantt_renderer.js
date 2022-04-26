@@ -60,8 +60,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     name: "columnTitle", label: "Title", tree: true, width: 320, min_width: 110,
                     template: renderColumnTitle,
                 },
-                { name: "text_rightside", label: "Assign.", align: "left", width: 120 },
-                { name: "date_deadline", label: "Limit", align: "center", width: 80, resize: true },
+                { name: "textRightside", label: "Assign.", align: "left", width: 120 },
+                { name: "dateDeadline", label: "Limit", align: "center", width: 80, resize: true },
             ]
             gantt.config.layout = {
                 css: "gantt_container",
@@ -228,11 +228,11 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.setWorkTime({ hours: ["8:30-12:00", "13:30-17:00"] }); //global working hours
 
             gantt.templates.task_class = function (start, end, task) {
-                return task.css_class;
+                return task.cssClass;
             };
 
             gantt.templates.grid_row_class = function (start, end, task) {
-                return task.css_class;
+                return task.cssClass;
             };
 
             gantt.templates.task_row_class = function (start, end, task) {
@@ -321,6 +321,14 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                             // }
                         };
             */
+        },
+        /**
+         * @override
+         */
+        start: function () {
+            var self = this;
+            self.updateGanttState(self.state);
+            return this._super.apply(this, arguments);
         },
         _updateIgnoreTime: function (level) {
 
@@ -618,26 +626,79 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
             gantt.init(gantt_container);
 
-            if (this.state.ganttData && this.state.ganttData.items) {
-                // self.state.ganttData.items.forEach(function (item) {
+            if (this.state.ganttDataFull && this.state.ganttDataFull.items) {
+                // self.state.ganttDataFull.items.forEach(function (item) {
                 //     item.color = "";
                 // });
                 // The library needs data in a `tasks` variable so we just create
                 // a reference on it (not a copy).
-                this.state.ganttData.tasks = this.state.ganttData.items;
+                this.state.ganttDataFull.tasks = this.state.ganttDataFull.items;
                 // The `parse` method will operate a `gantt.render()`
-                gantt.parse(this.state.ganttData);
+                gantt.parse(this.state.ganttDataFull);
             }
         },
+
+        /**
+         * This method is called by the controller when the search view is
+         * changed.
+         * Defined in `odoo/addons/web/static/src/js/views/abstract_renderer.js`
+         *
+         * @param {Object} state
+         * @param {Object} params
+         */
         updateState: function (state, params) {
-            // This method is called by the controller when the search view is
-            // changed.
-            gantt.clearAll();
+            var self = this;
+            self.updateGanttState(state, params);
             // The `super` call will do a `_render` and  `_renderView` so we
             // don't need to call `renderGantt` here.
-            var res = this._super.apply(this, arguments);
-            this.isGrouped = state.groupedBy.length > 0;
+            var res = self._super.apply(self, arguments);
+            self.isGrouped = state.groupedBy.length > 0;
             return res;
+        },
+        updateGanttState: function (state, params) {
+            var self = this;
+            gantt.clearAll();
+            state.ganttDataFull = {
+                items: [],
+                links: [],
+            };
+            // Retrieve controller and model from parent as defined in the view
+            var controller = self.getParent();
+            var model = controller.model;
+
+            self.createGanttGroupsAndItems(model, state, state);
+        },
+        createGanttGroupsAndItems: function (model, rootState, parentState) {
+            var self = this;
+
+            // Create groups first
+            var dataGroups = parentState.data.filter(function (dataPoint) {
+                return dataPoint.type === "list";
+            });
+            dataGroups.forEach(function (dataPoint) {
+                var group = model._createGanttGroup(dataPoint, parentState);
+                console.log("Create group", group.columnTitle, "with parent", parentState.value, "(", parentState.id, ")");
+                // Remove parent if match the root ID to avoid task not found error from gantt library
+                if (group.parent === rootState.id) {
+                    group.parent = false;
+                }
+                rootState.ganttDataFull.items.push(group);
+                self.createGanttGroupsAndItems(model, rootState, dataPoint);
+            });
+
+            // Create items next
+            var dataItems = parentState.data.filter(function (dataPoint) {
+                return dataPoint.type === "record";
+            });
+            dataItems.forEach(function (dataPoint) {
+                var item = model._createGanttItem(dataPoint, parentState);
+                console.log("Create item", item.columnTitle, "with parent", parentState.value, "(", parentState.id, ")");
+                // Remove parent if match the root ID to avoid task not found error from gantt library
+                if (item.parent === rootState.id) {
+                    item.parent = false;
+                }
+                rootState.ganttDataFull.items.push(item);
+            });
         },
         disableAllButtons: function () {
             this.$('.o_dhx_gantt_header').find('button').prop('disabled', true);

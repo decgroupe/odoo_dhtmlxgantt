@@ -6,6 +6,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
     var core = require('web.core');
 
     var _lt = core._lt;
+    var _t = core._t;
 
     var GanttModel = BasicModel.extend({
         get: function (id, options) {
@@ -25,37 +26,17 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         },
         load: function (params) {
             var self = this;
-            var res = this._super.apply(this, arguments);
+            var res = self._super.apply(self, arguments);
 
-            this.fields = params.fields;
-            this.modelName = params.modelName;
-            this.linkModelName = params.linkModelName;
-            this.parentModelName = params.parentModelName;
+            self.fields = params.fields;
+            self.modelName = params.modelName;
+            self.linkModelName = params.linkModelName;
+            self.parentModelName = params.parentModelName;
+            self.fieldsMapping = params.fieldsMapping;
+            self.parentFieldsMapping = params.parentFieldsMapping;
 
-            // Store field names mapping (params are read from arch in
-            // gantt_view.js)
-            this.task_map = {}
-            this.task_map.identifier = params.identifier;
-            this.task_map.task_text_leftside = params.task_text_leftside;
-            this.task_map.task_text = params.task_text;
-            this.task_map.task_text_rightside = params.task_text_rightside;
-            this.task_map.date_start = params.date_start;
-            this.task_map.date_stop = params.date_stop;
-            this.task_map.date_deadline = params.date_deadline;
-            this.task_map.duration = params.duration;
-            this.task_map.progress = params.progress;
-            this.task_map.open = params.open;
-            this.task_map.links = params.links;
-            this.task_map.parent = params.parent;
-            this.task_map.column_title = params.column_title;
-            this.task_map.css_class = params.css_class;
-
-            this.parent_map = {}
-            this.parent_map.date_start = params.parent_date_start;
-            this.parent_map.date_stop = params.parent_date_stop;
-
-            this.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
-            this.load2(params);
+            self.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
+            self.load2(params);
 
             return res;
 
@@ -82,88 +63,140 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         },
         _getFields: function () {
             var self = this;
-            var values = Object.keys(self.task_map).filter(function (key) {
-                let field = self.task_map[key];
+            var values = Object.keys(self.fieldsMapping).filter(function (key) {
+                let field = self.fieldsMapping[key];
                 // Do not include fields not defined in the xml view
                 if (field === undefined) {
                     return false;
                 };
                 return true;
             }).map(function (key) {
-                return self.task_map[key];
+                return self.fieldsMapping[key];
             });
             return values;
         },
         _getParentFields: function () {
             var self = this;
-            var values = Object.keys(self.parent_map).filter(function (key) {
-                let field = self.parent_map[key];
+            var values = Object.keys(self.parentFieldsMapping).filter(function (key) {
+                let field = self.parentFieldsMapping[key];
                 // Do not include fields not defined in the xml view
                 if (field === undefined) {
                     return false;
                 };
                 return true;
             }).map(function (key) {
-                return self.parent_map[key];
+                return self.parentFieldsMapping[key];
             });
             return values;
         },
         _getDateFields: function () {
             var self = this;
             return [
-                self.task_map.date_start,
-                self.task_map.date_stop,
+                self.fieldsMapping.dateStart,
+                self.fieldsMapping.dateStop,
             ]
         },
 
         _load: function (dataPoint, options) {
             var self = this;
+            // if (dataPoint.type === "list") {
+            //     dataPoint.groupedBy.length = 0;
+            // };
             var _loadBasic = self._super.apply(self, arguments);
             return _loadBasic.then(function () {
-                self._createGanttDataFromLastLoad(dataPoint);
-                return arguments;
+                // Keep a copy of the original result values
+                var _loadBasicResult = arguments;
+                return self._createGanttDataFromLastLoad(dataPoint).then(function () {
+                    // Return original result values 
+                    return _loadBasicResult;
+                });
             });
         },
-
         _createGanttDataFromLastLoad: function (state) {
             var self = this;
+            var groups = [];
             state.ganttData = {
                 items: [],
                 links: [],
             };
-            console.log(state.data);
+            console.log(state.id, "with parent", state.parentID, state.data);
             // Create gantt items (tasks) from records
             state.data.forEach(function (handle) {
-                // self.res_ids.push(rec[self.task_map.identifier]);
                 var dataPoint = self.get(handle);
-                var item = self._createGanttItem(dataPoint);
-                state.ganttData.items.push(item);
+                if (dataPoint.type === "record") {
+                    var item = self._createGanttItem(dataPoint);
+                    state.ganttData.items.push(item);
+                } else if (dataPoint.type === "list") {
+                    groups.push(dataPoint);
+                    var group = self._createGanttGroup(dataPoint);
+                    state.ganttData.items.push(group);
+                }
             });
+
+            var closedGroups = groups.filter(function (group) {
+                return !group.isOpen;
+            });
+            var defs = closedGroups.map(function (group) {
+                console.log("toggleGroup", group.id, "isOpen:", group.isOpen);
+                return self.toggleGroup(group.id);
+            });
+
+            return $.when(...defs).then(
+                console.log("Ungroup completed", defs.length)
+            );
+
         },
 
-        _createGanttItem: function (dataPoint) {
+        _createGanttGroup: function (dataPoint, parentDataPoint) {
+            var self = this;
+            // var field = groupBy[currentIdx];
+
+            var group = {
+                // id: _.uniqueId(field + "_js_"),
+                id: dataPoint.id,
+                parent: parentDataPoint && parentDataPoint.id || false,
+                type: gantt.config.types.project,
+                isGroup: true,
+                open: true,
+                groupBy: {},
+                // Use the field name as default value for the column title
+                // columnTitle: field,
+                columnTitle: _t("Undefined"),
+            };
+
+            if (dataPoint.value) {
+                group.columnTitle = `${dataPoint.value} (${dataPoint.count})`;
+            }
+
+            return group;
+        },
+        _createGanttItem: function (dataPoint, parentDataPoint) {
             var self = this;
             var item = {
                 // Keep a refence on original dataPoint
                 id: dataPoint.id,
+                parent: parentDataPoint && parentDataPoint.id || false,
                 type: gantt.config.types.task,
             };
 
-
             // Field name mapping defined in the XML gantt view
-            var mapping = self.task_map;
+            var mapping = self.fieldsMapping;
             // Record data
             var rec = dataPoint.data;
 
             // Set items without valid dates as unscheduled
-            // they can be hide using `show_unscheduled=False`
-            if (rec[mapping.date_start] == false
-                || rec[mapping.date_stop] == false
-                || rec[mapping.date_start] == rec[mapping.date_stop]) {
+            // they can be hidden using `show_unscheduled=False`
+            if (rec[mapping.dateStart] == false
+                || rec[mapping.dateStop] == false
+                || rec[mapping.dateStart] == rec[mapping.dateStop]) {
                 item.unscheduled = true;
             } else {
-                item.start_date = self._convertMomentDateToGanttDate(rec, mapping.date_start);
-                item.end_date = self._convertMomentDateToGanttDate(rec, mapping.date_stop);
+                item.start_date = self._convertMomentDateToGanttDate(rec, mapping.dateStart);
+                item.end_date = self._convertMomentDateToGanttDate(rec, mapping.dateStop);
+            }
+
+            if (self.fieldsMapping.dateDeadline) {
+                item.dateDeadline = self._convertMomentDateToGanttDate(rec, mapping.dateDeadline);
             }
 
             // TODO: Convert duration to a function in order have it fully
@@ -178,25 +211,25 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 }
             }
 
-            if (mapping.task_text) {
-                item.text = rec[mapping.task_text];
+            if (mapping.textInside) {
+                item.text = rec[mapping.textInside];
             }
 
             // Set main title visible in the left column
-            if (Array.isArray(rec[mapping.column_title])) {
-                item.columnTitle = rec[mapping.column_title][1];
+            if (Array.isArray(rec[mapping.columnTitle])) {
+                item.columnTitle = rec[mapping.columnTitle][1];
             } else {
-                item.columnTitle = rec[mapping.column_title];
+                item.columnTitle = rec[mapping.columnTitle];
             }
 
             // Set item left text (before progress bar)
-            if (mapping.task_text_leftside) {
-                item.textLeftSide = rec[mapping.task_text_leftside];
+            if (mapping.textLeftside) {
+                item.textLeftSide = rec[mapping.textLeftside];
             }
 
             // Set item right text (after progress bar)
-            if (mapping.task_text_rightside) {
-                item.textRightside = rec[mapping.task_text_rightside];
+            if (mapping.textRightside) {
+                item.textRightside = rec[mapping.textRightside];
             }
 
             if (mapping.progress) {
@@ -243,7 +276,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 domain: self.domain,
                 groupBy: self.groupBy,
                 orderBy: [{
-                    name: self.task_map.identifier,
+                    name: self.fieldsMapping.identifier,
                     asc: true,
                 }],
                 lazy: false,
@@ -345,45 +378,44 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             var self = this;
 
             var task = {};
-            task.id = rec[self.task_map.identifier];
-            task.text = rec[self.task_map.task_text];
+            task.id = rec[self.fieldsMapping.identifier];
+            task.text = rec[self.fieldsMapping.textInside];
             task.type = gantt.config.types.task;
 
             // Set tasks without valid dates as unscheduled
             // they can be hide using `show_unscheduled=False`
-            if (rec[self.task_map.date_start] == false
-                || rec[self.task_map.date_stop] == false
-                || rec[self.task_map.date_start] == rec[self.task_map.date_stop]) {
+            if (rec[self.fieldsMapping.dateStart] == false
+                || rec[self.fieldsMapping.dateStop] == false
+                || rec[self.fieldsMapping.dateStart] == rec[self.fieldsMapping.dateStop]) {
                 task.unscheduled = true;
             } else {
-                task.start_date = self.parseDate(rec, self.task_map.date_start);
-                task.end_date = self.parseDate(rec, self.task_map.date_stop);
+                task.start_date = self.parseDate(rec, self.fieldsMapping.dateStart);
+                task.end_date = self.parseDate(rec, self.fieldsMapping.dateStop);
             }
 
-            if (self.task_map.date_deadline) {
-                task.date_deadline = self.parseDate(rec, self.task_map.date_deadline);
+            if (self.fieldsMapping.dateDeadline) {
+                task.dateDeadline = self.parseDate(rec, self.fieldsMapping.dateDeadline);
             }
 
-            if (Array.isArray(rec[self.task_map.column_title])) {
-                task.column_title = rec[self.task_map.column_title][1];
+            if (Array.isArray(rec[self.fieldsMapping.columnTitle])) {
+                task.columnTitle = rec[self.fieldsMapping.columnTitle][1];
             } else {
-                task.column_title = rec[self.task_map.column_title];
+                task.columnTitle = rec[self.fieldsMapping.columnTitle];
             }
-            task.columnTitle = task.column_title;
 
-            if (self.task_map.progress) {
-                task.progress = rec[self.task_map.progress] / 100.0;
+            if (self.fieldsMapping.progress) {
+                task.progress = rec[self.fieldsMapping.progress] / 100.0;
             }
-            if (self.task_map.open) {
-                task.open = rec[self.task_map.open];
+            if (self.fieldsMapping.open) {
+                task.open = rec[self.fieldsMapping.open];
             }
 
             if (gantt.config.duration_unit == "minute") {
-                task.duration = rec[self.task_map.duration];
+                task.duration = rec[self.fieldsMapping.duration];
             } else if (gantt.config.duration_unit == "hour") {
-                task.duration = rec[self.task_map.duration] / 60;
+                task.duration = rec[self.fieldsMapping.duration] / 60;
             } else if (gantt.config.duration_unit == "day") {
-                task.duration = rec[self.task_map.duration] / 60 / 7;
+                task.duration = rec[self.fieldsMapping.duration] / 60 / 7;
             }
 
             // Retrieve and set parent from already created project/groups
@@ -400,41 +432,41 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 task.parent = parent.id;
             }
 
-            if (self.task_map.links) {
-                task.links = rec[self.task_map.links];
+            if (self.fieldsMapping.links) {
+                task.links = rec[self.fieldsMapping.links];
                 links.push.apply(links, JSON.parse(task.links))
             }
 
             // Set task color index from parent ID
-            if (self.task_map.css_class) {
+            if (self.fieldsMapping.cssClass) {
                 var unique_id = task.parent;
                 if (!(unique_id in css_classes)) {
                     var idx = 1 + Object.keys(css_classes).length % CSS_CLASSES_LENGTH;
-                    if (rec[self.task_map.css_class]) {
-                        css_classes[unique_id] = rec[self.task_map.css_class] + " ";
+                    if (rec[self.fieldsMapping.cssClass]) {
+                        css_classes[unique_id] = rec[self.fieldsMapping.cssClass] + " ";
                     } else {
                         css_classes[unique_id] = "";
                     }
                     css_classes[unique_id] += "o_dhx_gantt_color_" + idx;
                 }
-                task.css_class = css_classes[unique_id];
+                task.cssClass = css_classes[unique_id];
             }
 
-            if (self.task_map.task_text_leftside) {
-                task.text_leftside = rec[self.task_map.task_text_leftside];
+            if (self.fieldsMapping.textLeftside) {
+                task.textLeftside = rec[self.fieldsMapping.textLeftside];
             }
 
-            if (self.task_map.task_text_rightside) {
-                task.text_rightside = rec[self.task_map.task_text_rightside];
+            if (self.fieldsMapping.textRightside) {
+                task.textRightside = rec[self.fieldsMapping.textRightside];
             }
 
             task.tooltipTextFn = function (start, end) {
                 var res = []
-                if (task.text_leftside) {
-                    res.push(task.text_leftside);
+                if (task.textLeftside) {
+                    res.push(task.textLeftside);
                 }
-                if (task.text_rightside) {
-                    res.push(task.text_rightside);
+                if (task.textRightside) {
+                    res.push(task.textRightside);
                 }
                 res.push("<b>" + _lt("Start date:") + "</b> " + start);
                 res.push("<b>" + _lt("End date:") + "</b> " + end);
@@ -482,11 +514,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                             }
                         });
                         if (group) {
-                            var date = self.parseDate(rec, self.parent_map.date_start);
+                            var date = self.parseDate(rec, self.parentFieldsMapping.dateStart);
                             if (date) {
                                 group.start_date = date;
                             }
-                            var date = self.parseDate(rec, self.parent_map.date_stop);
+                            var date = self.parseDate(rec, self.parentFieldsMapping.dateStop);
                             if (date) {
                                 group.end_date = date;
                             }
@@ -501,7 +533,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
             // Create gantt-tasks from records
             records.forEach(function (rec) {
-                self.res_ids.push(rec[self.task_map.identifier]);
+                self.res_ids.push(rec[self.fieldsMapping.identifier]);
                 var task = self.createTask(rec, ganttGroups, groupBy, links, css_classes);
 
                 data.push(task);
@@ -517,22 +549,22 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             }
             var values = {};
             if ('text' in data) {
-                values[self.task_map.text] = data.text;
+                values[self.fieldsMapping.text] = data.text;
             }
             if ('open' in data) {
-                values[self.task_map.open] = data.open;
+                values[self.fieldsMapping.open] = data.open;
             }
             if ('progress' in data) {
-                values[self.task_map.progress] = data.progress;
+                values[self.fieldsMapping.progress] = data.progress;
             }
 
             if ('duration' in data) {
                 if (gantt.config.duration_unit == "minute") {
-                    values[self.task_map.duration] = data.duration;
+                    values[self.fieldsMapping.duration] = data.duration;
                 } else if (gantt.config.duration_unit == "hour") {
-                    values[self.task_map.duration] = data.duration * 60;
+                    values[self.fieldsMapping.duration] = data.duration * 60;
                 } else if (gantt.config.duration_unit == "day") {
-                    values[self.task_map.duration] = data.duration * 60 * 7;
+                    values[self.fieldsMapping.duration] = data.duration * 60 * 7;
                 }
             }
 
@@ -540,11 +572,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             var formatFunc = gantt.date.str_to_date("%d-%m-%Y %H:%i");
             if ('start_date' in data) {
                 var date_start = formatFunc(data.start_date);
-                values[self.task_map.date_start] = JSON.stringify(date_start);
+                values[self.fieldsMapping.dateStart] = JSON.stringify(date_start);
             }
             if ('end_date' in data) {
                 var date_stop = formatFunc(data.end_date);
-                values[self.task_map.date_stop] = JSON.stringify(date_stop);
+                values[self.fieldsMapping.dateStop] = JSON.stringify(date_stop);
             }
 
             if ('previous_start_date' in data) {
@@ -582,8 +614,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 records.forEach(function (rec) {
                     var task = gantt.getTask(rec.id);
                     if (task) {
-                        task.start_date = self.parseDate(rec, self.task_map.date_start);
-                        task.end_date = self.parseDate(rec, self.task_map.date_stop);
+                        task.start_date = self.parseDate(rec, self.fieldsMapping.date_start);
+                        task.end_date = self.parseDate(rec, self.fieldsMapping.date_stop);
                     }
                 });
             });

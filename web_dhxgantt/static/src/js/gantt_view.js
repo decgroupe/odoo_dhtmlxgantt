@@ -28,30 +28,38 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             // Already set in BasicView
             // this.loadParams.fields = this.fields;
             // this.loadParams.modelName = params.modelName;
-            this.loadParams.linkModelName = this.arch.attrs.link_model_name;
             this.loadParams.parentModelName = this.arch.attrs.parent_model_name;
+            this.loadParams.linkModelName = this.arch.attrs.link_model_name;
             this.loadParams.defaultGroupBy = this.arch.attrs.default_group_by;
 
             // Save fields to read and map them with internal names
-            this.loadParams.identifier = this.arch.attrs.identifier;
-            this.loadParams.parent = this.arch.attrs.parent;
-            this.loadParams.parent_date_start = this.arch.attrs.parent_date_start;
-            this.loadParams.parent_date_stop = this.arch.attrs.parent_date_stop;
-            this.loadParams.column_title = this.arch.attrs.column_title;
-            this.loadParams.date_start = this.arch.attrs.date_start;
-            this.loadParams.date_stop = this.arch.attrs.date_stop;
-            this.loadParams.date_deadline = this.arch.attrs.date_deadline;
-            this.loadParams.duration = this.arch.attrs.duration;
-            this.loadParams.open = this.arch.attrs.open;
-            this.loadParams.progress = this.arch.attrs.progress;
-            this.loadParams.task_text_leftside = this.arch.attrs.task_text_leftside;
-            this.loadParams.task_text = this.arch.attrs.task_text;
-            this.loadParams.task_text_rightside = this.arch.attrs.task_text_rightside;
-            this.loadParams.links = this.arch.attrs.links;
-            this.loadParams.css_class = this.arch.attrs.css_class;
+            var fieldsMapping = {
+                identifier: this.arch.attrs.identifier,
+                textLeftside: this.arch.attrs.task_text_leftside,
+                textInside: this.arch.attrs.task_text,
+                textRightside: this.arch.attrs.task_text_rightside,
+                dateStart: this.arch.attrs.date_start,
+                dateStop: this.arch.attrs.date_stop,
+                dateDeadline: this.arch.attrs.date_deadline,
+                duration: this.arch.attrs.duration,
+                progress: this.arch.attrs.progress,
+                open: this.arch.attrs.open,
+                links: this.arch.attrs.links,
+                parent: this.arch.attrs.parent,
+                columnTitle: this.arch.attrs.column_title,
+                cssClass: this.arch.attrs.css_class,
+            };
+            this.loadParams.fieldsMapping = fieldsMapping;
+
+            var parentFieldsMapping = {
+                dateStart: this.arch.attrs.parent_date_start,
+                dateStop: this.arch.attrs.parent_date_stop,
+            };
+            this.loadParams.parentFieldsMapping = parentFieldsMapping;
 
             this.rendererParams.modelName = params.modelName;
             this.rendererParams.fieldsViewInfo = viewInfo.fields;
+            this.rendererParams.fieldsMapping = fieldsMapping;
             this.rendererParams.drag_progress = (this.arch.attrs.drag_progress == "true");
         },
         _processFieldsView: function (fieldsView, viewType) {
