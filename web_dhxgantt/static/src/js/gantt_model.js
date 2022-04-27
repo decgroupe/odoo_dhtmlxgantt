@@ -9,6 +9,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
     var _t = core._t;
 
     var GanttModel = BasicModel.extend({
+
         get: function (id, options) {
             var res = this._super.apply(this, arguments);
             // Get is called by AbstractController.update() and the result
@@ -24,6 +25,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             }
             return res;
         },
+
         load: function (params) {
             var self = this;
             var res = self._super.apply(self, arguments);
@@ -36,11 +38,10 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             self.parentFieldsMapping = params.parentFieldsMapping;
 
             self.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
-            self.load2(params);
 
             return res;
-
         },
+
         /**
          * Reload all data for a given resource. At any time there is at most one
          * reload operation active.
@@ -58,10 +59,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             if ('groupBy' in params === false) {
                 params.groupBy = self.groupBy;
             }
-            self.load2(params);
             return res;
         },
+
         _getFields: function () {
+            // TODO: override BasicModel.getFieldNames() to add these content
             var self = this;
             var values = Object.keys(self.fieldsMapping).filter(function (key) {
                 let field = self.fieldsMapping[key];
@@ -75,6 +77,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             });
             return values;
         },
+
         _getParentFields: function () {
             var self = this;
             var values = Object.keys(self.parentFieldsMapping).filter(function (key) {
@@ -89,6 +92,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             });
             return values;
         },
+
         _getDateFields: function () {
             var self = this;
             return [
@@ -131,48 +135,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return $.when(...defs).then(
                 console.log("Ungroup completed", defs.length)
             );
-
         },
 
-        load2: function (params) {
-            console.log("load2");
-            var self = this;
-            if (params == undefined) {
-                throw new Error(`Missing argument.`);
-            };
-            self.domain = params.domain || self.domain || [];
-            self.modelName = params.modelName || self.modelName;
-            self.groupBy = self.defaultGroupBy;
-            if (params.groupBy && params.groupBy.length > 0) {
-                self.groupBy = params.groupBy;
-            };
-        },
-        _load2: function (dataPoint, options) {
-            console.log("_load2");
-            var self = this;
-            return self._rpc({
-                model: self.modelName,
-                method: 'read_group',
-                fields: self._getFields(),
-                domain: self.domain,
-                groupBy: self.groupBy,
-                orderBy: [{
-                    name: self.fieldsMapping.identifier,
-                    asc: true,
-                }],
-                lazy: false,
-            }).then(function (groups) {
-                return self._rpc({
-                    model: self.modelName,
-                    method: 'search_read',
-                    fields: self._getFields().concat(self.groupBy),
-                    domain: self.domain,
-                }).then(function (records) {
-                    self.convertData(records, groups, self.groupBy);
-                    // return dataPoint;
-                });
-            });
-        },
         parseDate(rec, date_name) {
             var formatFunc = gantt.date.str_to_date("%Y-%m-%d %H:%i:%s", true);
             var date;
@@ -183,246 +147,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             }
             return date;
         },
-        findGroup: function (groupList, groupBy) {
-            if (groupList.length > 0 && Object.keys(groupBy).length > 0) {
-                for (let i = 0; i < groupList.length; i++) {
-                    var group = groupList[i];
-                    if (_.isEqual(group.groupBy, groupBy)) {
-                        return group;
-                    }
-                }
-            }
-            return false;
-        },
-        createGroup: function (resGroup, ganttGroups, parentIDs, currentIdx, groupBy) {
-            var self = this;
-            var field = groupBy[currentIdx];
 
-            var groupTemplate = {
-                id: _.uniqueId(field + "_js_"),
-                type: gantt.config.types.project,
-                isGroup: true,
-                open: true,
-                groupBy: {},
-                // Use the field name as default value for the column title
-                columnTitle: field,
-            }
 
-            var parentGroupBy = {};
-            for (let j = 0; j <= currentIdx; j++) {
-                var field = groupBy[j];
-                var value = resGroup[field];
-                groupTemplate.groupBy[field] = value;
-                if (j < currentIdx) {
-                    parentGroupBy[field] = value;
-                }
-            }
-
-            var byValue = resGroup[field];
-            if (Array.isArray(byValue)) {
-                groupTemplate.text = byValue[1];
-                groupTemplate.columnTitle = groupTemplate.text;
-            } else {
-                groupTemplate.text = byValue;
-                groupTemplate.columnTitle = byValue;
-            }
-
-            var group = self.findGroup(ganttGroups, groupTemplate.groupBy);
-            if (!group) {
-                // Create a new group
-                group = Object.assign({}, groupTemplate);
-                console.log("Create group", group.id, group.text, "for field", field, "with groupBy", group.groupBy);
-                // Find its parent
-                var parent = self.findGroup(ganttGroups, parentGroupBy);
-                if (parent) {
-                    group.parent = parent.id;
-                }
-                // Add model informations to allow opening it as a Form
-                if (Array.isArray(byValue) && field in self.fields) {
-                    group.modelName = self.fields[field].relation || '';
-                    group.modelId = byValue[0] || 0;
-                    // Populate parent arrays used to fullfill group
-                    // data (start_date, end_date, etc.)
-                    if (group.modelName == self.parentModelName) {
-                        parentIDs.push(group.modelId);
-                    }
-                }
-                ganttGroups.push(group);
-                return group;
-            } else {
-                console.log("Reuse group", group.id, group.text, "for field", field, "with groupBy", group.groupBy);
-            }
-            return false;
-        },
-        createTask: function (rec, ganttGroups, groupBy, links, css_classes) {
-            const CSS_CLASSES_LENGTH = 28;
-            var self = this;
-
-            var task = {};
-            task.id = rec[self.fieldsMapping.identifier];
-            task.text = rec[self.fieldsMapping.textInside];
-            task.type = gantt.config.types.task;
-
-            // Set tasks without valid dates as unscheduled
-            // they can be hide using `show_unscheduled=False`
-            if (rec[self.fieldsMapping.dateStart] == false
-                || rec[self.fieldsMapping.dateStop] == false
-                || rec[self.fieldsMapping.dateStart] == rec[self.fieldsMapping.dateStop]) {
-                task.unscheduled = true;
-            } else {
-                task.start_date = self.parseDate(rec, self.fieldsMapping.dateStart);
-                task.end_date = self.parseDate(rec, self.fieldsMapping.dateStop);
-            }
-
-            if (self.fieldsMapping.dateDeadline) {
-                task.dateDeadline = self.parseDate(rec, self.fieldsMapping.dateDeadline);
-            }
-
-            if (Array.isArray(rec[self.fieldsMapping.columnTitle])) {
-                task.columnTitle = rec[self.fieldsMapping.columnTitle][1];
-            } else {
-                task.columnTitle = rec[self.fieldsMapping.columnTitle];
-            }
-
-            if (self.fieldsMapping.progress) {
-                task.progress = rec[self.fieldsMapping.progress] / 100.0;
-            }
-            if (self.fieldsMapping.open) {
-                task.open = rec[self.fieldsMapping.open];
-            }
-
-            if (gantt.config.duration_unit == "minute") {
-                task.duration = rec[self.fieldsMapping.duration];
-            } else if (gantt.config.duration_unit == "hour") {
-                task.duration = rec[self.fieldsMapping.duration] / 60;
-            } else if (gantt.config.duration_unit == "day") {
-                task.duration = rec[self.fieldsMapping.duration] / 60 / 7;
-            }
-
-            // Retrieve and set parent from already created project/groups
-            // 1 - Build groupBy for this record
-            var recGroupBy = {};
-            for (let j = 0; j < groupBy.length; j++) {
-                var field = groupBy[j];
-                var value = rec[field];
-                recGroupBy[field] = value;
-            }
-            // 2 - Retrieve its parent with this groupBy
-            var parent = self.findGroup(ganttGroups, recGroupBy);
-            if (parent) {
-                task.parent = parent.id;
-            }
-
-            if (self.fieldsMapping.links) {
-                task.links = rec[self.fieldsMapping.links];
-                links.push.apply(links, JSON.parse(task.links))
-            }
-
-            // Set task color index from parent ID
-            if (self.fieldsMapping.cssClass) {
-                var unique_id = task.parent;
-                if (!(unique_id in css_classes)) {
-                    var idx = 1 + Object.keys(css_classes).length % CSS_CLASSES_LENGTH;
-                    if (rec[self.fieldsMapping.cssClass]) {
-                        css_classes[unique_id] = rec[self.fieldsMapping.cssClass] + " ";
-                    } else {
-                        css_classes[unique_id] = "";
-                    }
-                    css_classes[unique_id] += "o_dhx_gantt_color_" + idx;
-                }
-                task.cssClass = css_classes[unique_id];
-            }
-
-            if (self.fieldsMapping.textLeftside) {
-                task.textLeftside = rec[self.fieldsMapping.textLeftside];
-            }
-
-            if (self.fieldsMapping.textRightside) {
-                task.textRightside = rec[self.fieldsMapping.textRightside];
-            }
-
-            task.tooltipTextFn = function (start, end) {
-                var res = []
-                if (task.textLeftside) {
-                    res.push(task.textLeftside);
-                }
-                if (task.textRightside) {
-                    res.push(task.textRightside);
-                }
-                res.push("<b>" + _lt("Start date:") + "</b> " + start);
-                res.push("<b>" + _lt("End date:") + "</b> " + end);
-                if (task.text) {
-                    res.push(task.text);
-                }
-                return res.join("<br/>");
-            }
-
-            return task;
-        },
-        convertData: function (records, groups, groupBy) {
-            var self = this;
-
-            var ganttGroups = [];
-            var data = [];
-            var parentIDs = [];
-            // todo: convert date from utc to mgt or wtever
-
-            // Create gantt-projects from groups
-            for (let i = 0; i < groupBy.length; i++) {
-                groups.forEach(function (resGroup) {
-                    var group = self.createGroup(resGroup, ganttGroups, parentIDs, i, groupBy);
-                    if (group) {
-                        data.push(group);
-                    }
-                });
-            }
-
-            // Query group data (only if parent model is set in the xml view)
-            if (self.parentModelName !== undefined) {
-                self._rpc({
-                    model: self.parentModelName,
-                    method: 'read',
-                    args: [
-                        parentIDs,
-                        self._getParentFields(),
-                    ],
-                    context: this.context,
-                }).then(function (parentRecords) {
-                    parentRecords.forEach(function (rec) {
-                        var group = ganttGroups.find(function (element) {
-                            if (element.modelId == rec.id && element.modelName == self.parentModelName) {
-                                return element;
-                            }
-                        });
-                        if (group) {
-                            var date = self.parseDate(rec, self.parentFieldsMapping.dateStart);
-                            if (date) {
-                                group.start_date = date;
-                            }
-                            var date = self.parseDate(rec, self.parentFieldsMapping.dateStop);
-                            if (date) {
-                                group.end_date = date;
-                            }
-                        }
-                    });
-                });
-            }
-
-            self.res_ids = [];
-            var links = [];
-            var css_classes = {}
-
-            // Create gantt-tasks from records
-            records.forEach(function (rec) {
-                self.res_ids.push(rec[self.fieldsMapping.identifier]);
-                var task = self.createTask(rec, ganttGroups, groupBy, links, css_classes);
-
-                data.push(task);
-            });
-
-            self.ganttData.data = data;
-            self.ganttData.links = links;
-        },
         writeTask: function (data) {
             var self = this;
             if (data.isGroup) {
@@ -484,6 +210,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 };
             });
         },
+
         reloadTaskDates: function (ids) {
             var self = this;
             return self._rpc({
@@ -501,6 +228,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 });
             });
         },
+
         createLink: function (data) {
             var self = this;
             var values = {};
@@ -530,6 +258,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 };
             });
         },
+
         deleteLink: function (data) {
             var self = this;
             return self._rpc({
@@ -539,6 +268,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 context: self.getContext(),
             });
         },
+
         getCriticalPath: function () {
             var self = this;
             return self._rpc({
@@ -547,6 +277,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 args: [self.res_ids],
             });
         },
+
         schedule: function () {
             var self = this;
             return self._rpc({
@@ -555,9 +286,11 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 args: [self.res_ids],
             });
         },
+
         getContext: function () {
             return { 'gantt_duration_unit': gantt.config.duration_unit }
         },
+
     });
     return GanttModel;
 });

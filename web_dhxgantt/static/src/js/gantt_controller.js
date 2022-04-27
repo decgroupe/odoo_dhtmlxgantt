@@ -20,6 +20,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             gantt_drag_end: '_onGanttDragEnd',
         }),
         date_object: new Date(),
+        
         init: function (parent, model, renderer, params) {
             // Ensure that id is properly defined, otherwise the model load
             // function does not return properly
@@ -28,6 +29,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             }
             this._super.apply(this, arguments);
         },
+
         getContext: function () {
             var context = this._super.apply(this, arguments);
             return context;
@@ -148,6 +150,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 return true;
             });
         },
+
         _onGanttAttachEvents: function (event) {
             var self = this;
             if (!self.events_set) {
@@ -162,10 +165,12 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 self.events_set = true;
             }
         },
+
         _onGanttUpdated: function (event) {
             event.stopPropagation();
             console.log('_onGanttUpdated');
         },
+
         _onGanttConfig: function () {
             var self = this;
             if (self.gantt_configured) {
@@ -208,6 +213,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 return false; //return false to prevent showing the default form
             });
         },
+
         write_completed: function (record, isChanged) {
             if (isChanged) {
                 var params = {
@@ -216,6 +222,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 this.update(params);
             }
         },
+
         _onGanttShowCriticalPath: function () {
             event.stopPropagation();
             var self = this;
@@ -236,12 +243,15 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             });
             def.always(self._enableAllButtons.bind(self));
         },
+
         _disableAllButtons: function () {
             this.renderer.disableAllButtons();
         },
+
         _enableAllButtons: function () {
             this.renderer.enableAllButtons();
         },
+
         _onGanttSchedule: function () {
             var self = this;
             self.model.schedule().then(function () {
@@ -249,10 +259,12 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 self.renderer.renderGantt();
             });
         },
+        
         _onGanttReload: function () {
             var self = this;
             self.update({ reload: true });
         },
+
         /**
          * todo
          *
@@ -286,6 +298,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 }
             }
         },
+
     });
     return GanttController;
 

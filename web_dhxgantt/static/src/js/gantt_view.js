@@ -48,7 +48,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
                 cssClass: this.arch.attrs.css_class,
             };
             // TODO: add these fields to the list of automatically fetched data
-            // without having to declare a <field> 
+            // without having to declare a <field> LOOK AT getFieldNames
             this.loadParams.fieldsMapping = fieldsMapping;
             
             // Save parent model fields to read and map them with internal names
