@@ -25,14 +25,12 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this._super.apply(this, arguments);
 
             this.loadParams.type = 'list';
-            // Already set in BasicView
-            // this.loadParams.fields = this.fields;
-            // this.loadParams.modelName = params.modelName;
+            // `fields` and `modelName` are already set in BasicView
             this.loadParams.parentModelName = this.arch.attrs.parent_model_name;
             this.loadParams.linkModelName = this.arch.attrs.link_model_name;
             this.loadParams.defaultGroupBy = this.arch.attrs.default_group_by;
 
-            // Save fields to read and map them with internal names
+            // Save model fields to read and map them with internal names
             var fieldsMapping = {
                 identifier: this.arch.attrs.identifier,
                 textLeftside: this.arch.attrs.task_text_leftside,
@@ -49,8 +47,11 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
                 columnTitle: this.arch.attrs.column_title,
                 cssClass: this.arch.attrs.css_class,
             };
+            // TODO: add these fields to the list of automatically fetched data
+            // without having to declare a <field> 
             this.loadParams.fieldsMapping = fieldsMapping;
-
+            
+            // Save parent model fields to read and map them with internal names
             var parentFieldsMapping = {
                 dateStart: this.arch.attrs.parent_date_start,
                 dateStop: this.arch.attrs.parent_date_stop,
@@ -60,6 +61,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.rendererParams.modelName = params.modelName;
             this.rendererParams.fieldsViewInfo = viewInfo.fields;
             this.rendererParams.fieldsMapping = fieldsMapping;
+            this.rendererParams.parentFieldsMapping = parentFieldsMapping;
             this.rendererParams.drag_progress = (this.arch.attrs.drag_progress == "true");
         },
         _processFieldsView: function (fieldsView, viewType) {

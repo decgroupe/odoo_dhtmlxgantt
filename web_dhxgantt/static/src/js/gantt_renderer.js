@@ -32,6 +32,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             self.modelName = params.modelName;
             self.fieldsViewInfo = params.fieldsViewInfo;
 
+            self.fieldsMapping = params.fieldsMapping;
+            self.parentFieldsMapping = params.parentFieldsMapping;
+
             self.hoursPerDay = 7;
             self.showOnlyWorkdays = true;
             self.showOnlyOfficeHours = true;
@@ -658,17 +661,14 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         updateGanttState: function (state, params) {
             var self = this;
             gantt.clearAll();
+            self.cssClasses = [];
             state.ganttDataFull = {
                 items: [],
                 links: [],
             };
-            // Retrieve controller and model from parent as defined in the view
-            var controller = self.getParent();
-            var model = controller.model;
-
-            self.createGanttGroupsAndItems(model, state, state);
+            self.createGanttGroupsAndItems(state, state);
         },
-        createGanttGroupsAndItems: function (model, rootState, parentState) {
+        createGanttGroupsAndItems: function (rootState, parentState) {
             var self = this;
 
             // Create groups first
@@ -676,14 +676,14 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 return dataPoint.type === "list";
             });
             dataGroups.forEach(function (dataPoint) {
-                var group = model._createGanttGroup(dataPoint, parentState);
+                var group = self._createGanttGroup(dataPoint, parentState);
                 console.log("Create group", group.columnTitle, "with parent", parentState.value, "(", parentState.id, ")");
                 // Remove parent if match the root ID to avoid task not found error from gantt library
                 if (group.parent === rootState.id) {
                     group.parent = false;
                 }
                 rootState.ganttDataFull.items.push(group);
-                self.createGanttGroupsAndItems(model, rootState, dataPoint);
+                self.createGanttGroupsAndItems(rootState, dataPoint);
             });
 
             // Create items next
@@ -691,15 +691,160 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 return dataPoint.type === "record";
             });
             dataItems.forEach(function (dataPoint) {
-                var item = model._createGanttItem(dataPoint, parentState);
+                var item = self._createGanttItem(dataPoint, parentState);
                 console.log("Create item", item.columnTitle, "with parent", parentState.value, "(", parentState.id, ")");
                 // Remove parent if match the root ID to avoid task not found error from gantt library
                 if (item.parent === rootState.id) {
                     item.parent = false;
                 }
+                self._setGanttItemCssClass(item);
                 rootState.ganttDataFull.items.push(item);
             });
         },
+
+        _setGanttItemCssClass: function (ganttItem) {
+            const CSS_CLASSES_LENGTH = 28;
+            var self = this;
+            // Set task color index from parent ID
+            if (self.fieldsMapping.cssClass) {
+                var uniqueId = ganttItem.parent;
+                var rec = ganttItem.dataPoint.data;
+                if (!(uniqueId in self.cssClasses)) {
+                    var idx = 1 + Object.keys(self.cssClasses).length % CSS_CLASSES_LENGTH;
+                    if (rec[self.fieldsMapping.cssClass]) {
+                        self.cssClasses[uniqueId] = rec[self.fieldsMapping.cssClass] + " ";
+                    } else {
+                        self.cssClasses[uniqueId] = "";
+                    }
+                    self.cssClasses[uniqueId] += "o_dhx_gantt_color_" + idx;
+                }
+                ganttItem.cssClass = self.cssClasses[uniqueId];
+            }
+        },
+
+        _createGanttGroup: function (dataPoint, parentDataPoint) {
+            var self = this;
+            // var field = groupBy[currentIdx];
+
+            var group = {
+                dataPoint: dataPoint, // Keep a refence on original dataPoint
+                id: dataPoint.id,
+                parent: parentDataPoint && parentDataPoint.id || false,
+                type: gantt.config.types.project,
+                isGroup: true,
+                open: true,
+                groupBy: {},
+                // Use the field name as default value for the column title
+                // columnTitle: field,
+                columnTitle: _t("Undefined"),
+            };
+
+            if (dataPoint.value) {
+                group.columnTitle = `${dataPoint.value} (${dataPoint.count})`;
+            }
+
+            return group;
+        },
+
+        _createGanttItem: function (dataPoint, parentDataPoint) {
+            var self = this;
+            var item = {
+                dataPoint: dataPoint, // Keep a refence on original dataPoint
+                id: dataPoint.id,
+                parent: parentDataPoint && parentDataPoint.id || false,
+                type: gantt.config.types.task,
+            };
+
+            // Field name mapping defined in the XML gantt view
+            var mapping = self.fieldsMapping;
+            // Record data
+            var rec = dataPoint.data;
+
+            // Set items without valid dates as unscheduled
+            // they can be hidden using `show_unscheduled=False`
+            if (rec[mapping.dateStart] == false
+                || rec[mapping.dateStop] == false
+                || rec[mapping.dateStart] == rec[mapping.dateStop]) {
+                item.unscheduled = true;
+            } else {
+                item.start_date = self._convertMomentDateToGanttDate(rec, mapping.dateStart);
+                item.end_date = self._convertMomentDateToGanttDate(rec, mapping.dateStop);
+            }
+
+            if (self.fieldsMapping.dateDeadline) {
+                item.dateDeadline = self._convertMomentDateToGanttDate(rec, mapping.dateDeadline);
+            }
+
+            // TODO: Convert duration to a function in order have it fully
+            // updated on view changes (if possible)
+            if (mapping.duration) {
+                if (gantt.config.duration_unit == "minute") {
+                    item.duration = rec[mapping.duration];
+                } else if (gantt.config.duration_unit == "hour") {
+                    item.duration = rec[mapping.duration] / 60;
+                } else if (gantt.config.duration_unit == "day") {
+                    item.duration = rec[mapping.duration] / 60 / 7;
+                }
+            }
+
+            if (mapping.textInside) {
+                item.text = rec[mapping.textInside];
+            }
+
+            // Set main title visible in the left column
+            if (Array.isArray(rec[mapping.columnTitle])) {
+                item.columnTitle = rec[mapping.columnTitle][1];
+            } else {
+                item.columnTitle = rec[mapping.columnTitle];
+            }
+
+            // Set item left text (before progress bar)
+            if (mapping.textLeftside) {
+                item.textLeftSide = rec[mapping.textLeftside];
+            }
+
+            // Set item right text (after progress bar)
+            if (mapping.textRightside) {
+                item.textRightside = rec[mapping.textRightside];
+            }
+
+            if (mapping.progress) {
+                item.progress = rec[mapping.progress] / 100.0;
+            }
+            if (mapping.open) {
+                item.open = rec[mapping.open];
+            }
+
+            item.tooltipTextFn = function (start, end) {
+                var res = []
+                if (item.textLeftside) {
+                    res.push(item.textLeftside);
+                }
+                if (item.textRightside) {
+                    res.push(item.textRightside);
+                }
+                res.push("<b>" + _lt("Start date:") + "</b> " + start);
+                res.push("<b>" + _lt("End date:") + "</b> " + end);
+                if (item.text) {
+                    res.push(item.text);
+                }
+                return res.join("<br/>");
+            }
+
+            return item;
+        },
+
+        _convertMomentDateToGanttDate(rec, date_name) {
+            var formatFunc = gantt.date.str_to_date("%Y-%m-%d %H:%i:%s", true);
+            var date;
+            if (rec[date_name]) {
+                date = formatFunc(rec[date_name].format("YYYY-MM-DD H:mm:ss"));
+            } else {
+                date = false;
+            }
+            return date;
+        },
+
         disableAllButtons: function () {
             this.$('.o_dhx_gantt_header').find('button').prop('disabled', true);
         },
