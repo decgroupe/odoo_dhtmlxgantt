@@ -629,15 +629,15 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
             gantt.init(gantt_container);
 
-            if (this.state.ganttDataFull && this.state.ganttDataFull.items) {
-                // self.state.ganttDataFull.items.forEach(function (item) {
+            if (this.state.gantt.data && this.state.gantt.data.items) {
+                // self.state.gantt.data.items.forEach(function (item) {
                 //     item.color = "";
                 // });
                 // The library needs data in a `tasks` variable so we just create
                 // a reference on it (not a copy).
-                this.state.ganttDataFull.tasks = this.state.ganttDataFull.items;
+                this.state.gantt.data.tasks = this.state.gantt.data.items;
                 // The `parse` method will operate a `gantt.render()`
-                gantt.parse(this.state.ganttDataFull);
+                gantt.parse(this.state.gantt.data);
             }
         },
 
@@ -662,10 +662,18 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             var self = this;
             gantt.clearAll();
             self.cssClasses = [];
-            state.ganttDataFull = {
-                items: [],
-                links: [],
-            };
+            state.gantt = {
+                data: {
+                    items: [],
+                    links: [],
+                },
+                // When moving or resizing an item, the gantt library create
+                // a deep copy of the item object, but some dataPoint  
+                // properties are not compatible with this deep copy, so we
+                // just keep a reference on the datapoint id, and the datapoint
+                // itself is stored in this dictionary.
+                dataPoints: {},
+            }
             self.createGanttGroupsAndItems(state, state);
         },
         createGanttGroupsAndItems: function (rootState, parentState) {
@@ -676,13 +684,15 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 return dataPoint.type === "list";
             });
             dataGroups.forEach(function (dataPoint) {
+                rootState.gantt.dataPoints[dataPoint.id] = dataPoint;
+                rootState.gantt.dataPoints[parentState.id] = parentState;
                 var group = self._createGanttGroup(dataPoint, parentState);
                 console.log("Create group", group.columnTitle, "with parent", parentState.value, "(", parentState.id, ")");
                 // Remove parent if match the root ID to avoid task not found error from gantt library
                 if (group.parent === rootState.id) {
                     group.parent = false;
                 }
-                rootState.ganttDataFull.items.push(group);
+                rootState.gantt.data.items.push(group);
                 self.createGanttGroupsAndItems(rootState, dataPoint);
             });
 
@@ -691,24 +701,27 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 return dataPoint.type === "record";
             });
             dataItems.forEach(function (dataPoint) {
+                rootState.gantt.dataPoints[dataPoint.id] = dataPoint;
+                rootState.gantt.dataPoints[parentState.id] = parentState;
                 var item = self._createGanttItem(dataPoint, parentState);
                 console.log("Create item", item.columnTitle, "with parent", parentState.value, "(", parentState.id, ")");
                 // Remove parent if match the root ID to avoid task not found error from gantt library
+                // The original value is still readable from the parentId
                 if (item.parent === rootState.id) {
                     item.parent = false;
                 }
-                self._setGanttItemCssClass(item);
-                rootState.ganttDataFull.items.push(item);
+                self._setGanttItemCssClass(rootState, item);
+                rootState.gantt.data.items.push(item);
             });
         },
 
-        _setGanttItemCssClass: function (ganttItem) {
+        _setGanttItemCssClass: function (rootState, ganttItem) {
             const CSS_CLASSES_LENGTH = 28;
             var self = this;
             // Set task color index from parent ID
             if (self.fieldsMapping.cssClass) {
                 var uniqueId = ganttItem.parent;
-                var rec = ganttItem.dataPoint.data;
+                var rec = rootState.gantt.dataPoints[ganttItem.id].data;
                 if (!(uniqueId in self.cssClasses)) {
                     var idx = 1 + Object.keys(self.cssClasses).length % CSS_CLASSES_LENGTH;
                     if (rec[self.fieldsMapping.cssClass]) {
@@ -726,11 +739,12 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             var self = this;
             // var field = groupBy[currentIdx];
 
+            var parentId = parentDataPoint && parentDataPoint.id || false;
             var group = {
-                dataPoint: dataPoint, // Keep a refence on original dataPoint
-                id: dataPoint.id,
-                parent: parentDataPoint && parentDataPoint.id || false,
+                id: dataPoint.id, // library mandatory attribute to identify a unique item
+                parent: parentId, // library mandatory attribute to group items by id
                 type: gantt.config.types.project,
+                parentId: parentId, // copy of the parent attribute
                 isGroup: true,
                 open: true,
                 groupBy: {},
@@ -748,11 +762,12 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
         _createGanttItem: function (dataPoint, parentDataPoint) {
             var self = this;
+            var parentId = parentDataPoint && parentDataPoint.id || false;
             var item = {
-                dataPoint: dataPoint, // Keep a refence on original dataPoint
-                id: dataPoint.id,
-                parent: parentDataPoint && parentDataPoint.id || false,
+                id: dataPoint.id, // library mandatory attribute to identify a unique item
+                parent: parentId, // library mandatory attribute to group items by id
                 type: gantt.config.types.task,
+                parentId: parentId, // copy of the parent attribute
             };
 
             // Field name mapping defined in the XML gantt view

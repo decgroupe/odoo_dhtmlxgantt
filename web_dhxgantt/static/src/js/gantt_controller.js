@@ -20,7 +20,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             gantt_drag_end: '_onGanttDragEnd',
         }),
         date_object: new Date(),
-        
+
         init: function (parent, model, renderer, params) {
             // Ensure that id is properly defined, otherwise the model load
             // function does not return properly
@@ -79,7 +79,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             var self = this;
             return self._super.apply(self, arguments);
         },
-        
+
         _onGanttCreateDataProcessor: function (event) {
             var self = this;
             if (this.dp_created) {
@@ -179,25 +179,31 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             self.gantt_configured = true;
             gantt.attachEvent('onBeforeLightbox', function (id) {
                 // todo: Change this to trigger_up from renderer !!! to avoid errors
-                var task = gantt.getTask(id);
-                var title = _lt('Open: ') + task.text_leftside;
+                var item = gantt.getTask(id);
+                var title = _lt('Open: ') + item.text_leftside;
                 if (self.form_dialog && !self.form_dialog.isDestroyed()) {
                     return false;
                 }
                 var session = self.getSession();
                 var context = session ? session.user_context : {};
-                var res_model = self.model.modelName;
-                var res_id = task.id;
-                if (task.overrideModelName) {
-                    res_model = task.overrideModelName;
+                var res_model = false;
+                var res_id = false;
+
+                var dataPoint = self.model.get(item.id);
+                var parentDataPoint = self.model.get(item.parentId);
+
+                if (item.isGroup) {
+                    var groupedByField = parentDataPoint.groupedBy[0];
+                    var field = parentDataPoint.fields[groupedByField];
+                    if (field && field.relation) {
+                        res_model = field.relation;
+                        res_id = dataPoint.res_id;
+                    }
+                } else {
+                    res_model = dataPoint.model;
+                    res_id = dataPoint.data.id;
                 }
-                if (task.overrideModelId) {
-                    res_id = task.overrideModelId;
-                }
-                if (task.isGroup) {
-                    res_model = task.modelName;
-                    res_id = task.modelId;
-                }
+
                 if (res_model && res_id) {
                     self.form_dialog = new dialogs.FormViewDialog(self, {
                         res_model: res_model,
@@ -259,7 +265,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 self.renderer.renderGantt();
             });
         },
-        
+
         _onGanttReload: function () {
             var self = this;
             self.update({ reload: true });

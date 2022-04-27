@@ -28,17 +28,17 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
         load: function (params) {
             var self = this;
-            var res = self._super.apply(self, arguments);
 
+            // Load params before super to ensure proper settings for `_load`
             self.fields = params.fields;
             self.modelName = params.modelName;
             self.linkModelName = params.linkModelName;
             self.parentModelName = params.parentModelName;
             self.fieldsMapping = params.fieldsMapping;
             self.parentFieldsMapping = params.parentFieldsMapping;
-
             self.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
 
+            var res = self._super.apply(self, arguments);
             return res;
         },
 
@@ -62,20 +62,36 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return res;
         },
 
-        _getFields: function () {
-            // TODO: override BasicModel.getFieldNames() to add these content
+        _getFieldNames: function (element, options) {
             var self = this;
-            var values = Object.keys(self.fieldsMapping).filter(function (key) {
-                let field = self.fieldsMapping[key];
-                // Do not include fields not defined in the xml view
-                if (field === undefined) {
-                    return false;
-                };
-                return true;
-            }).map(function (key) {
-                return self.fieldsMapping[key];
-            });
-            return values;
+            var fieldNames = self._super.apply(self, arguments);
+            // Extend fields-to-read only to ones matching the main model
+            if (element.model == this.modelName) {
+                Object.keys(self.fieldsMapping).forEach(function (key) {
+                    let field = self.fieldsMapping[key];
+                    // Include only fields defined in the xml view
+                    if (field !== undefined) {
+                        // Do not add duplicates
+                        if (fieldNames.indexOf(field) === -1) {
+                            fieldNames.push(field);
+                        }
+                    };
+                });
+            }
+            // Extend fields-to-read only to ones matching the parent model
+            if (element.model == this.parentModelName) {
+                Object.keys(self.parentFieldsMapping).forEach(function (key) {
+                    let field = self.parentFieldsMapping[key];
+                    // Include only fields defined in the xml view
+                    if (field !== undefined) {
+                        // Do not add duplicates
+                        if (fieldNames.indexOf(field) === -1) {
+                            fieldNames.push(field);
+                        }
+                    };
+                });
+            }
+            return fieldNames;
         },
 
         _getParentFields: function () {
