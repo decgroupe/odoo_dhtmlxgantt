@@ -171,6 +171,27 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             console.log('_onGanttUpdated');
         },
 
+        _getGanttItemDatabaseModelAndID: function (ganttItem, dataPoint, parentDataPoint) {
+            var res = {
+                model: false,
+                id: false,
+            };
+
+            if (ganttItem.isGroup) {
+                var groupedByField = parentDataPoint.groupedBy[0];
+                var field = parentDataPoint.fields[groupedByField];
+                if (field && field.relation) {
+                    res.model = field.relation;
+                    res.id = dataPoint.res_id;
+                }
+            } else {
+                res.model = dataPoint.model;
+                res.id = dataPoint.data.id;
+            }
+
+            return res;
+        },
+
         _onGanttConfig: function () {
             var self = this;
             if (self.gantt_configured) {
@@ -180,39 +201,26 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             gantt.attachEvent('onBeforeLightbox', function (id) {
                 // todo: Change this to trigger_up from renderer !!! to avoid errors
                 var item = gantt.getTask(id);
-                var title = _lt('Open: ') + item.text_leftside;
+                var title = _lt('Open: ') + item.textLeftSide;
                 if (self.form_dialog && !self.form_dialog.isDestroyed()) {
                     return false;
                 }
                 var session = self.getSession();
                 var context = session ? session.user_context : {};
-                var res_model = false;
-                var res_id = false;
 
                 var dataPoint = self.model.get(item.id);
                 var parentDataPoint = self.model.get(item.parentId);
+                var res = self._getGanttItemDatabaseModelAndID(item, dataPoint, parentDataPoint);
 
-                if (item.isGroup) {
-                    var groupedByField = parentDataPoint.groupedBy[0];
-                    var field = parentDataPoint.fields[groupedByField];
-                    if (field && field.relation) {
-                        res_model = field.relation;
-                        res_id = dataPoint.res_id;
-                    }
-                } else {
-                    res_model = dataPoint.model;
-                    res_id = dataPoint.data.id;
-                }
-
-                if (res_model && res_id) {
+                if (res.model && res.id) {
                     self.form_dialog = new dialogs.FormViewDialog(self, {
-                        res_model: res_model,
-                        res_id: res_id,
+                        res_model: res.model,
+                        res_id: res.id,
                         context: context,
                         title: title,
                         // view_id: Number(this.open_popup_action),
                         on_saved: function (record, isChanged) {
-                            self.write_completed(record, isChanged);
+                            self._onFormSaved(record, isChanged);
                         }
                     }).open();
                 }
@@ -220,7 +228,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             });
         },
 
-        write_completed: function (record, isChanged) {
+        _onFormSaved: function (record, isChanged) {
             if (isChanged) {
                 var params = {
                     context: this.context,

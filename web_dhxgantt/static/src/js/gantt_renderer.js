@@ -230,41 +230,41 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.setWorkTime({ day: 7, hours: false });
             gantt.setWorkTime({ hours: ["8:30-12:00", "13:30-17:00"] }); //global working hours
 
-            gantt.templates.task_class = function (start, end, task) {
-                return task.cssClass;
+            gantt.templates.task_class = function (start, end, item) {
+                return item.cssClass;
             };
 
-            gantt.templates.grid_row_class = function (start, end, task) {
-                return task.cssClass;
+            gantt.templates.grid_row_class = function (start, end, item) {
+                return item.cssClass;
             };
 
             gantt.templates.task_row_class = function (start, end, task) {
                 return "";
             };
 
-            gantt.templates.task_text = function (start, end, task) {
+            gantt.templates.task_text = function (start, end, item) {
                 var res = [];
-                if (task.type == gantt.config.types.task) {
+                if (item.type == gantt.config.types.task) {
                     if (session.debug) {
-                        res.push(`(ID: #${task.id})`);
+                        res.push(`(ID: #${item.id})`);
                     }
                 }
-                if (task.text) {
-                    res.push(task.text);
+                if (item.textInside) {
+                    res.push(item.textInside);
                 }
                 return res.join("<br/>");
             };
 
-            gantt.templates.leftside_text = function (start, end, task) {
-                if (task.type == gantt.config.types.task && task.text_leftside) {
-                    return task.text_leftside;
+            gantt.templates.leftside_text = function (start, end, item) {
+                if (item.type == gantt.config.types.task && item.textLeftSide) {
+                    return item.textLeftSide;
                 }
             };
 
             // https://docs.dhtmlx.com/gantt/api__gantt_rightside_text_template.html
-            // specifies the text assigned to tasks bars on the right side
-            gantt.templates.rightside_text = function (start, end, task) {
-                var duration = task.duration;
+            // specifies the text assigned to task bars on the right side
+            gantt.templates.rightside_text = function (start, end, item) {
+                var duration = item.duration;
                 if (gantt.config.duration_unit == "day") {
                     duration = duration * 60 * self.hoursPerDay;
                 }
@@ -282,21 +282,21 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 if (minutes > 0) {
                     res += " " + minutes + _lt(" minute(s)");
                 }
-                if (task.text_rightside) {
-                    res += " " + task.text_rightside
+                if (item.textRightside) {
+                    res += " " + item.textRightside
                 }
                 return res.trim();
             };
 
-            gantt.templates.progress_text = function (start, end, task) {
+            gantt.templates.progress_text = function (start, end, item) {
                 // TODO: Replace style with a css class
-                return "<span style='text-align:left; display:inline-block; width:90%;'>" + Math.round(task.progress * 100) + "% </span>";
+                return "<span style='text-align:left; display:inline-block; width:90%;'>" + Math.round(item.progress * 100) + "% </span>";
             };
 
             gantt.templates.tooltip_text = function (start, end, item) {
                 // console.log(self.state.fields);
                 if (item.type == gantt.config.types.task) {
-                    self.renderItemTooltip(
+                    return self.renderItemTooltip(
                         item,
                         gantt.templates.tooltip_date_format(start),
                         gantt.templates.tooltip_date_format(end)
@@ -495,8 +495,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             }
             res.push("<b>" + _lt("Start date:") + "</b> " + start);
             res.push("<b>" + _lt("End date:") + "</b> " + end);
-            if (item.text) {
-                res.push(item.text);
+            if (item.textInside) {
+                res.push(item.textInside);
             }
             return res.join("<br/>");
         },
@@ -737,8 +737,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
         _createGanttGroup: function (dataPoint, parentDataPoint) {
             var self = this;
-            // var field = groupBy[currentIdx];
-
             var parentId = parentDataPoint && parentDataPoint.id || false;
             var group = {
                 id: dataPoint.id, // library mandatory attribute to identify a unique item
@@ -748,9 +746,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 isGroup: true,
                 open: true,
                 groupBy: {},
-                // Use the field name as default value for the column title
-                // columnTitle: field,
                 columnTitle: _t("Undefined"),
+                bar_height: 10,
+                row_height: gantt.config.row_height + 4,
             };
 
             if (dataPoint.value) {
@@ -768,6 +766,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 parent: parentId, // library mandatory attribute to group items by id
                 type: gantt.config.types.task,
                 parentId: parentId, // copy of the parent attribute
+                bar_height: gantt.config.row_height - 2,
             };
 
             // Field name mapping defined in the XML gantt view
@@ -803,24 +802,24 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             }
 
             if (mapping.textInside) {
-                item.text = rec[mapping.textInside];
+                item.textInside = rec[mapping.textInside];
             }
 
             // Set main title visible in the left column
             if (Array.isArray(rec[mapping.columnTitle])) {
-                item.columnTitle = rec[mapping.columnTitle][1];
+                item.columnTitle = rec[mapping.columnTitle][1] || _t("Undefined");
             } else {
-                item.columnTitle = rec[mapping.columnTitle];
+                item.columnTitle = rec[mapping.columnTitle] || _t("Undefined");
             }
 
             // Set item left text (before progress bar)
             if (mapping.textLeftside) {
-                item.textLeftSide = rec[mapping.textLeftside];
+                item.textLeftSide = rec[mapping.textLeftside] || _t("Undefined");
             }
 
             // Set item right text (after progress bar)
             if (mapping.textRightside) {
-                item.textRightside = rec[mapping.textRightside];
+                item.textRightside = rec[mapping.textRightside] || _t("Undefined");
             }
 
             if (mapping.progress) {
@@ -840,8 +839,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 }
                 res.push("<b>" + _lt("Start date:") + "</b> " + start);
                 res.push("<b>" + _lt("End date:") + "</b> " + end);
-                if (item.text) {
-                    res.push(item.text);
+                if (item.textInside) {
+                    res.push(item.textInside);
                 }
                 return res.join("<br/>");
             }

@@ -210,17 +210,20 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 var previous_date_stop = formatFunc(data.previous_end_date);
             }
 
+            // Get database id from dataPoint id
+            var res_id = self.get(data.id).data.id;
+
             return self._rpc({
                 model: self.modelName,
                 method: 'write',
-                args: [data.id, values],
+                args: [res_id, values],
                 context: self.getContext(),
             }).then(function (res) {
                 if (res) {
                     return self._rpc({
                         model: self.modelName,
                         method: 'update_gantt_schedule',
-                        args: [[data.id], backward],
+                        args: [[res_id], backward],
                         context: self.getContext(),
                     });
                 };
@@ -238,8 +241,8 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 records.forEach(function (rec) {
                     var task = gantt.getTask(rec.id);
                     if (task) {
-                        task.start_date = self.parseDate(rec, self.fieldsMapping.date_start);
-                        task.end_date = self.parseDate(rec, self.fieldsMapping.date_stop);
+                        task.start_date = self.parseDate(rec, self.fieldsMapping.dateStart);
+                        task.end_date = self.parseDate(rec, self.fieldsMapping.dateStop);
                     }
                 });
             });
@@ -247,8 +250,12 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
         createLink: function (data) {
             var self = this;
+            
+            // Get database id from dataPoint id
+            var res_id = self.get(data.id).data.id;
+
             var values = {};
-            values.id = data.id;
+            values.id = res_id;
             values.source_id = data.source;
             values.target_id = data.target;
             values.type = data.type;
@@ -264,7 +271,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     var updatedData = {
                         'databaseId': res
                     };
-                    gantt.updateLink(data.id, updatedData);
+                    gantt.updateLink(res_id, updatedData);
                     return self._rpc({
                         model: self.modelName,
                         method: 'update_gantt_schedule',
