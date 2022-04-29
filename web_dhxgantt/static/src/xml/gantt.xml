@@ -58,4 +58,32 @@
         </div>
     </t>
 
+    <t t-name="web_dhxgantt.row.title">
+        <span class="o_gantt_row_title">
+            <t t-esc="item.columnTitle"/>
+        </span>
+    </t>
+
+    <t t-name="web_dhxgantt.row.assign">
+        <span class="o_gantt_row_assign">
+            <t t-esc="item.assignedResource"/>
+        </span>
+    </t>
+
+    <t t-name="web_dhxgantt.row.limit">
+        <span class="o_gantt_row_limit">
+            <t t-esc="item.dateDeadline"/>
+        </span>
+    </t>
+
+    <t t-name="web_dhxgantt.item.tooltip">
+        <span class="o_gantt_item_tooltip">
+            <h2 t-if="item.textLeftSide"><t t-esc="item.textLeftSide"/></h2>
+            <h3 t-if="item.textRightside"><t t-esc="item.textRightside"/></h3>
+            <b>Start date: <t t-esc="start"/></b><br/>
+            <b>End date: <t t-esc="end"/></b><br/>
+            <div t-if="item.textInside"><t t-raw="item.textInside"/></div>
+        </span>
+    </t>
+
 </templates>

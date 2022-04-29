@@ -174,9 +174,6 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             if ('text' in data) {
                 values[self.fieldsMapping.text] = data.text;
             }
-            if ('open' in data) {
-                values[self.fieldsMapping.open] = data.open;
-            }
             if ('progress' in data) {
                 values[self.fieldsMapping.progress] = data.progress;
             }

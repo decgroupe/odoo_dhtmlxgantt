@@ -5,11 +5,15 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
     var BasicRenderer = require('web.BasicRenderer');
     var session = require('web.session');
     var core = require('web.core');
-
+    var QWeb = core.qweb;
     var _lt = core._lt;
 
     var GanttRenderer = BasicRenderer.extend({
         template: "web_dhxgantt.gantt_view",
+        columnTitleTemplate: "web_dhxgantt.row.title",
+        columnAssignTemplate: "web_dhxgantt.row.assign",
+        columnLimitTemplate: "web_dhxgantt.row.limit",
+        itemTooltipTemplate: "web_dhxgantt.item.tooltip",
         date_object: new Date(),
         events: _.extend({}, BasicRenderer.prototype.events, {
             'click button.o_dhx_critical_path': '_onClickCriticalPath',
@@ -49,22 +53,40 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.config.show_links = true;
             gantt.config.drag_links = false;
 
-            var renderColumnTitle = function (task) {
-                // TODO: add image when available (current user)
-                return task.columnTitle;
-            };
-
             // https://docs.dhtmlx.com/gantt/desktop__specifying_columns.html
             // Note that `resize` with `config.grid_resize` is a PRO edition
             // functionality
             gantt.config.columns = [
                 // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
                 {
-                    name: "columnTitle", label: "Title", tree: true, width: 320, min_width: 110,
-                    template: renderColumnTitle,
+                    name: "columnTitle",
+                    label: "Title",
+                    tree: true,
+                    width: 320,
+                    min_width: 110,
+                    renderer: self,
+                    state: state,
+                    template: self.renderColumnTitle,
                 },
-                { name: "textRightside", label: "Assign.", align: "left", width: 120 },
-                { name: "dateDeadline", label: "Limit", align: "center", width: 80, resize: true },
+                {
+                    name: "assign",
+                    label: "Assign.",
+                    align: "left",
+                    width: 120,
+                    renderer: self,
+                    state: state,
+                    template: self.renderColumnAssign,
+                },
+                {
+                    name: "limit",
+                    label: "Limit",
+                    align: "center",
+                    width: 80,
+                    resize: true,
+                    renderer: self,
+                    state: state,
+                    template: self.renderColumnLimit,
+                },
             ]
             gantt.config.layout = {
                 css: "gantt_container",
@@ -467,6 +489,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
          */
         on_detach_callback: function () {
             this._isInDom = false;
+            // Clear all data to stop all offscreen rendering, otherwise some
+            // callbacks could fail.
+            gantt.clearAll();
         },
         /**
          * Main entry point for the rendering.
@@ -485,21 +510,71 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             });
             return res;
         },
-        renderItemTooltip: function (item, start, end) {
-            var res = []
-            if (item.textLeftSide) {
-                res.push(item.textLeftSide);
+
+        renderColumnTitle: function (item) {
+            if (!this.renderer._isInDom) {
+                // Security in case the gantt data has not been cleared
+                return;
             }
-            if (item.textRightside) {
-                res.push(item.textRightside);
-            }
-            res.push("<b>" + _lt("Start date:") + "</b> " + start);
-            res.push("<b>" + _lt("End date:") + "</b> " + end);
-            if (item.textInside) {
-                res.push(item.textInside);
-            }
-            return res.join("<br/>");
+            var controller = this.renderer.getParent();
+            console.log(controller.controllerID, controller.controllers);
+            var model = controller.model;
+            var dataPoint = model.get(item.id);
+            var rendered = QWeb.render(this.renderer.columnTitleTemplate, {
+                rec: dataPoint.data, // Record data
+                item: item, // Gantt data
+                debug: session.debug,
+            });
+            return rendered;
         },
+
+        renderColumnAssign: function (item) {
+            if (!this.renderer._isInDom) {
+                // Security in case the gantt data has not been cleared
+                return;
+            }
+            var controller = this.renderer.getParent();
+            var model = controller.model;
+            var dataPoint = model.get(item.id);
+            var rendered = QWeb.render(this.renderer.columnAssignTemplate, {
+                rec: dataPoint.data, // Record data
+                item: item, // Gantt data
+                debug: session.debug,
+            });
+            return rendered;
+        },
+
+        renderColumnLimit: function (item) {
+            if (!this.renderer._isInDom) {
+                // Security in case the gantt data has not been cleared
+                return;
+            }
+            var controller = this.renderer.getParent();
+            var model = controller.model;
+            var dataPoint = model.get(item.id);
+            var rendered = QWeb.render(this.renderer.columnLimitTemplate, {
+                rec: dataPoint.data, // Record data
+                item: item, // Gantt data
+                debug: session.debug,
+            });
+            return rendered;
+        },
+
+        renderItemTooltip: function (item, start, end) {
+            var self = this;
+            var controller = self.getParent();
+            var model = controller.model;
+            var dataPoint = model.get(item.id);
+            var rendered = QWeb.render(self.itemTooltipTemplate, {
+                rec: dataPoint.data, // Record data
+                item: item, // Gantt data
+                start: start,
+                end: end,
+                debug: session.debug,
+            });
+            return rendered;
+        },
+
         renderGantt: function () {
             var self = this;
             var gantt_root = this.$('.o_dhx_gantt_root').get(0);
@@ -806,10 +881,17 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             }
 
             // Set main title visible in the left column
-            if (Array.isArray(rec[mapping.columnTitle])) {
-                item.columnTitle = rec[mapping.columnTitle][1] || _t("Undefined");
+            if (rec[mapping.columnTitle].data) {
+                item.columnTitle = rec[mapping.columnTitle].data.display_name || _t("Undefined");
             } else {
                 item.columnTitle = rec[mapping.columnTitle] || _t("Undefined");
+            }
+
+            // Set resource to be displayed in the assign column
+            if (rec[mapping.assignedResource].data) {
+                item.assignedResource = rec[mapping.assignedResource].data.display_name || _t("Undefined");
+            } else {
+                item.assignedResource = rec[mapping.assignedResource] || _t("Undefined");
             }
 
             // Set item left text (before progress bar)
@@ -824,25 +906,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
             if (mapping.progress) {
                 item.progress = rec[mapping.progress] / 100.0;
-            }
-            if (mapping.open) {
-                item.open = rec[mapping.open];
-            }
-
-            item.tooltipTextFn = function (start, end) {
-                var res = []
-                if (item.textLeftside) {
-                    res.push(item.textLeftside);
-                }
-                if (item.textRightside) {
-                    res.push(item.textRightside);
-                }
-                res.push("<b>" + _lt("Start date:") + "</b> " + start);
-                res.push("<b>" + _lt("End date:") + "</b> " + end);
-                if (item.textInside) {
-                    res.push(item.textInside);
-                }
-                return res.join("<br/>");
             }
 
             return item;

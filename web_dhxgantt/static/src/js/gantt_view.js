@@ -32,7 +32,6 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
 
             // Save model fields to read and map them with internal names
             var fieldsMapping = {
-                identifier: this.arch.attrs.identifier,
                 textLeftside: this.arch.attrs.task_text_leftside,
                 textInside: this.arch.attrs.task_text,
                 textRightside: this.arch.attrs.task_text_rightside,
@@ -41,11 +40,11 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
                 dateDeadline: this.arch.attrs.date_deadline,
                 duration: this.arch.attrs.duration,
                 progress: this.arch.attrs.progress,
-                open: this.arch.attrs.open,
                 links: this.arch.attrs.links,
                 parent: this.arch.attrs.parent,
                 columnTitle: this.arch.attrs.column_title,
                 cssClass: this.arch.attrs.css_class,
+                assignedResource: this.arch.attrs.assigned_resource,
             };
             // TODO: add these fields to the list of automatically fetched data
             // without having to declare a <field> LOOK AT getFieldNames

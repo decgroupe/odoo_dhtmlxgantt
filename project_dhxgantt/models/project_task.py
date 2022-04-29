@@ -45,6 +45,12 @@ class ProjectTask(models.Model):
     )
 
     @api.multi
+    def _compute_gantt_assigned_resource(self):
+        super()._compute_gantt_assigned_resource()
+        for rec in self:
+            rec.gantt_assigned_resource = rec.user_id.name
+
+    @api.multi
     def write(self, vals):
         res = super().write(vals)
         return res
