@@ -64,6 +64,12 @@
         </span>
     </t>
 
+    <t t-name="web_dhxgantt.group.title">
+        <span class="o_gantt_group_title">
+            <t t-esc="item.columnTitle"/>
+        </span>
+    </t>
+
     <t t-name="web_dhxgantt.row.assign">
         <span class="o_gantt_row_assign">
             <t t-esc="item.assignedResource"/>

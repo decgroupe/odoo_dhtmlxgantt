@@ -29,6 +29,11 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             this.loadParams.parentModelName = this.arch.attrs.parent_model_name;
             this.loadParams.linkModelName = this.arch.attrs.link_model_name;
             this.loadParams.defaultGroupBy = this.arch.attrs.default_group_by;
+            if (this.groupable) {
+                this.loadParams.groupBy = this.arch.attrs.default_group_by ? [this.arch.attrs.default_group_by] : (params.groupBy || []);
+            } else {
+                this.loadParams.groupBy = [];
+            }
 
             // Save model fields to read and map them with internal names
             var fieldsMapping = {

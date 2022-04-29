@@ -36,7 +36,9 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             self.parentModelName = params.parentModelName;
             self.fieldsMapping = params.fieldsMapping;
             self.parentFieldsMapping = params.parentFieldsMapping;
-            self.defaultGroupBy = params.defaultGroupBy ? [params.defaultGroupBy] : [];
+
+            self.defaultGroupedBy = params.groupBy;
+            params.groupedBy = (params.groupedBy && params.groupedBy.length) ? params.groupedBy : this.defaultGroupedBy;
 
             var res = self._super.apply(self, arguments);
             return res;
@@ -55,10 +57,12 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
          */
         reload: function (id, params) {
             var self = this;
-            var res = self._super.apply(self, arguments);
-            if ('groupBy' in params === false) {
-                params.groupBy = self.groupBy;
+            // if the groupBy is given in the params and if it is an empty array,
+            // fallback on the default groupBy
+            if (params && params.groupBy && !params.groupBy.length) {
+                params.groupBy = self.defaultGroupedBy;
             }
+            var res = self._super.apply(self, arguments);
             return res;
         },
 
@@ -247,7 +251,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
         createLink: function (data) {
             var self = this;
-            
+
             // Get database id from dataPoint id
             var res_id = self.get(data.id).data.id;
 

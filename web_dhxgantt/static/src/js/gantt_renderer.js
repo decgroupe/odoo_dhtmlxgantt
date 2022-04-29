@@ -10,6 +10,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
     var GanttRenderer = BasicRenderer.extend({
         template: "web_dhxgantt.gantt_view",
+        groupTitleTemplate: "web_dhxgantt.group.title",
         columnTitleTemplate: "web_dhxgantt.row.title",
         columnAssignTemplate: "web_dhxgantt.row.assign",
         columnLimitTemplate: "web_dhxgantt.row.limit",
@@ -516,15 +517,24 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 // Security in case the gantt data has not been cleared
                 return;
             }
+
             var controller = this.renderer.getParent();
             console.log(controller.controllerID, controller.controllers);
             var model = controller.model;
             var dataPoint = model.get(item.id);
-            var rendered = QWeb.render(this.renderer.columnTitleTemplate, {
+
+            if (item.isGroup) {
+                var template = this.renderer.groupTitleTemplate;
+            } else {
+                var template = this.renderer.columnTitleTemplate;
+            }
+
+            var rendered = QWeb.render(template, {
                 rec: dataPoint.data, // Record data
                 item: item, // Gantt data
                 debug: session.debug,
             });
+
             return rendered;
         },
 
