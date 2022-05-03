@@ -59,12 +59,11 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // Note that `resize` with `config.grid_resize` is a PRO edition
             // functionality
             gantt.config.columns = [
-                // {name: "wbs", label: "WBS", width: 40, template: gantt.getWBSCode},
                 {
                     name: "columnTitle",
                     label: "Title",
                     tree: true,
-                    width: 270,
+                    width: 295,
                     min_width: 110,
                     renderer: self,
                     state: state,
@@ -73,8 +72,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 {
                     name: "actions",
                     label: "",
-                    tree: true,
-                    width: 50,
+                    width: 25,
                     renderer: self,
                     state: state,
                     template: self.renderColumnActions,
@@ -338,6 +336,20 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     return "";
                 };
             }
+
+            // Override default `date_grid` template to display the deadline
+            // even when not scheduled
+            gantt.templates.date_grid = function (date, item, column) {
+                var rendered = gantt.templates.grid_date_format(date, column);
+                if (item && gantt.isUnscheduledTask(item) && gantt.config.show_unscheduled) {
+                    var res = gantt.templates.task_unscheduled_time(item);
+                    if (!res) {
+                        rendered = `<span class="text-muted">${rendered}</span>`;
+                    }
+                };
+                return rendered;
+            };
+
 
             this._updateIgnoreTime();
 

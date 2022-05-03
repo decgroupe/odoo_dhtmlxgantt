@@ -79,7 +79,7 @@
     <t t-name="web_dhxgantt.row.limit">
         <span class="o_gantt_row_limit">
             <t t-if="date">
-                <t t-esc="date"/>
+                <t t-raw="date"/>
             </t>
         </span>
     </t>
