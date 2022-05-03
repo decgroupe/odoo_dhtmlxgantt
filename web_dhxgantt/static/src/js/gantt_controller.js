@@ -11,9 +11,9 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
     var GanttController = BasicController.extend({
         custom_events: _.extend({}, BasicController.prototype.custom_events, {
             gantt_data_updated: '_onGanttUpdated',
-            gantt_create_dp: '_onGanttCreateDataProcessor',
+            gantt_create_dataprocessor: '_onGanttCreateDataProcessor',
             gantt_attach_events: '_onGanttAttachEvents',
-            gantt_config: '_onGanttConfig',
+            gantt_edit_form: '_onGanttEditForm',
             gantt_show_critical_path: '_onGanttShowCriticalPath',
             gantt_schedule: '_onGanttSchedule',
             gantt_reload: '_onGanttReload',
@@ -171,7 +171,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             console.log('_onGanttUpdated');
         },
 
-        _getGanttItemDatabaseModelAndID: function (ganttItem, dataPoint, parentDataPoint) {
+        _getGanttItemDatabaseModelAndID: function (ganttItem, dataPoint, parentDataPoint, options) {
             var res = {
                 model: false,
                 id: false,
@@ -192,40 +192,34 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             return res;
         },
 
-        _onGanttConfig: function () {
+        _onGanttEditForm: function (event) {
             var self = this;
-            if (self.gantt_configured) {
-                return;
+            var options = event.data.options ? event.data.options : {};
+            var item = gantt.getTask(event.data.id);
+            var title = _lt('Open: ') + item.textLeftSide;
+            if (self.form_dialog && !self.form_dialog.isDestroyed()) {
+                return false;
             }
-            self.gantt_configured = true;
-            gantt.attachEvent('onBeforeLightbox', function (id) {
-                // todo: Change this to trigger_up from renderer !!! to avoid errors
-                var item = gantt.getTask(id);
-                var title = _lt('Open: ') + item.textLeftSide;
-                if (self.form_dialog && !self.form_dialog.isDestroyed()) {
-                    return false;
-                }
-                var session = self.getSession();
-                var context = session ? session.user_context : {};
+            var session = self.getSession();
+            var context = session ? session.user_context : {};
 
-                var dataPoint = self.model.get(item.id);
-                var parentDataPoint = self.model.get(item.parentId);
-                var res = self._getGanttItemDatabaseModelAndID(item, dataPoint, parentDataPoint);
+            var dataPoint = self.model.get(item.id);
+            var parentDataPoint = self.model.get(item.parentId);
+            var res = self._getGanttItemDatabaseModelAndID(item, dataPoint, parentDataPoint, options);
 
-                if (res.model && res.id) {
-                    self.form_dialog = new dialogs.FormViewDialog(self, {
-                        res_model: res.model,
-                        res_id: res.id,
-                        context: context,
-                        title: title,
-                        // view_id: Number(this.open_popup_action),
-                        on_saved: function (record, isChanged) {
-                            self._onFormSaved(record, isChanged);
-                        }
-                    }).open();
-                }
-                return false; //return false to prevent showing the default form
-            });
+            if (res.model && res.id) {
+                self.form_dialog = new dialogs.FormViewDialog(self, {
+                    res_model: res.model,
+                    res_id: res.id,
+                    context: context,
+                    title: title,
+                    // view_id: Number(this.open_popup_action),
+                    on_saved: function (record, isChanged) {
+                        self._onFormSaved(record, isChanged);
+                    }
+                }).open();
+            }
+            return false; //return false to prevent showing the default form
         },
 
         _onFormSaved: function (record, isChanged) {

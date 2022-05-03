@@ -25,6 +25,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             'click button.o_dhx_zoom_in': '_onClickZoomIn',
             'click button.o_dhx_zoom_out': '_onClickZoomOut',
             'click button.o_dhx_fullscreen': '_onClickFullscreen',
+            'click i.o_dhx_edit_item': '_onClickEditItem',
         }),
         init: function (parent, state, params) {
             this._super.apply(this, arguments);
@@ -63,11 +64,20 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     name: "columnTitle",
                     label: "Title",
                     tree: true,
-                    width: 320,
+                    width: 270,
                     min_width: 110,
                     renderer: self,
                     state: state,
                     template: self.renderColumnTitle,
+                },
+                {
+                    name: "actions",
+                    label: "",
+                    tree: true,
+                    width: 50,
+                    renderer: self,
+                    state: state,
+                    template: self.renderColumnActions,
                 },
                 {
                     name: "assign",
@@ -478,6 +488,17 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 gantt.collapse();
             }
         },
+
+        _onClickEditItem: function (ev) {
+            var id = $(ev.currentTarget).data('id');
+            this.trigger_up("gantt_edit_form", {
+                'id': id,
+                'options': {
+                    noOverride: true,
+                },
+            });
+        },
+
         /**
          * Called each time the renderer is attached into the DOM.
          */
@@ -538,6 +559,14 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             return rendered;
         },
 
+        renderColumnActions: function (item) {
+            var rendered = "";
+            if (!item.isGroup) {
+                rendered = rendered + `<i class="gantt_tree_action o_dhx_edit_item fa fa-pencil" data-id="${item.id}"></i>`;
+            }
+            return rendered;
+        },
+
         renderColumnAssign: function (item) {
             if (!this.renderer._isInDom) {
                 // Security in case the gantt data has not been cleared
@@ -587,8 +616,8 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
         renderGantt: function () {
             var self = this;
-            var gantt_root = this.$('.o_dhx_gantt_root').get(0);
-            var gantt_container = this.$('.o_dhx_gantt').get(0);
+            var gantt_root = self.$('.o_dhx_gantt_root').get(0);
+            var gantt_container = self.$('.o_dhx_gantt').get(0);
             // Selector is not finding the `gantt_root` ! don't know why ...
             if (!gantt_root) {
                 gantt_root = gantt_container.parentElement;
@@ -610,14 +639,19 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 // https://docs.dhtmlx.com/gantt/desktop__extensions_list.html#advanceddragndrop
                 click_drag: true,
             });
-            this.trigger_up('gantt_config');
-            this.trigger_up('gantt_create_dp');
-            this.trigger_up('gantt_attach_events');
-            if (!this.events_set) {
+            self.trigger_up('gantt_create_dataprocessor');
+            self.trigger_up('gantt_attach_events');
+            if (!self.events_set) {
                 gantt.attachEvent('onBeforeGanttRender', function () {
                     var rootHeight = self.$el.height();
                     var headerHeight = self.$('.o_dhx_gantt_header').height();
                     self.$('.o_dhx_gantt').height(rootHeight - headerHeight);
+                });
+                gantt.attachEvent('onBeforeLightbox', function (id) {
+                    self.trigger_up("gantt_edit_form", {
+                        'id': id,
+                        'options': {},
+                    });
                 });
                 gantt.attachEvent('onClearAll', function () {
                     console.log("onClearAll", arguments);
@@ -664,6 +698,28 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 gantt.attachEvent('onGanttScroll', function () {
                     console.log("onGanttScroll", arguments);
                 });
+                gantt.attachEvent('onTaskClick', function (id, e) {
+                    console.log("onTaskClick", arguments);
+                    return true;
+                });
+
+                // Library hook to disable click events when clicking
+                // on an item with `gantt_tree_action` class
+                var old_is_icon_open_click = gantt._is_icon_open_click;
+                gantt._is_icon_open_click = function (e) {
+                    var res = old_is_icon_open_click(e);
+                    if (!res) {
+                        if (!e) return false;
+                        var target = e.target || e.srcElement;
+                        if (!(target && target.className)) return false;
+                        if (target.className.indexOf("gantt_tree_action") !== -1) {
+                            return true;
+                        }
+                        return false;
+                    }
+                    return res;
+                };
+
                 this.events_set = true;
             }
             // We don't need to call `gantt.clearAll()` since the future
