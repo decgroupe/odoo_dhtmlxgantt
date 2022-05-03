@@ -78,17 +78,33 @@
 
     <t t-name="web_dhxgantt.row.limit">
         <span class="o_gantt_row_limit">
-            <t t-esc="item.dateDeadline"/>
+            <t t-if="date">
+                <t t-esc="date"/>
+            </t>
         </span>
     </t>
 
     <t t-name="web_dhxgantt.item.tooltip">
         <span class="o_gantt_item_tooltip">
-            <h2 t-if="item.textLeftSide"><t t-esc="item.textLeftSide"/></h2>
-            <h3 t-if="item.textRightside"><t t-esc="item.textRightside"/></h3>
-            <b>Start date: <t t-esc="start"/></b><br/>
-            <b>End date: <t t-esc="end"/></b><br/>
-            <div t-if="item.textInside"><t t-raw="item.textInside"/></div>
+            <h2 t-if="item.textLeftSide">
+                <t t-esc="item.textLeftSide"/>
+            </h2>
+            <h3 t-if="item.textRightside">
+                <t t-esc="item.textRightside"/>
+            </h3>
+            <ul class="p-0 mb-0 list-unstyled d-flex flex-row">
+                <li class="d-flex flex-column pr-2">
+                    <strong>Start:</strong>
+                    <strong>Stop:</strong>
+                </li>
+                <li class="d-flex flex-column">
+                    <span t-esc="start"/>
+                    <span t-esc="end"/>
+                </li>
+            </ul>
+            <div t-if="item.textInside">
+                <t t-raw="item.textInside"/>
+            </div>
         </span>
     </t>
 

@@ -591,11 +591,16 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             var controller = this.renderer.getParent();
             var model = controller.model;
             var dataPoint = model.get(item.id);
-            var rendered = QWeb.render(this.renderer.columnLimitTemplate, {
-                rec: dataPoint.data, // Record data
-                item: item, // Gantt data
-                debug: session.debug,
-            });
+            if (!item.isGroup) {
+                var rendered = QWeb.render(this.renderer.columnLimitTemplate, {
+                    rec: dataPoint.data, // Record data
+                    item: item, // Gantt data
+                    date: gantt.templates.date_grid(item.dateDeadline, item),
+                    debug: session.debug,
+                });
+            } else {
+                var rendered = "";
+            }
             return rendered;
         },
 
