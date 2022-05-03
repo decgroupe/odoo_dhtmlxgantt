@@ -28,6 +28,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 throw new Error("Model not loaded properly, missing 'initialState.id'");
             }
             this._super.apply(this, arguments);
+            this.formViewId = params.formViewId;
         },
 
         getContext: function () {
@@ -171,25 +172,27 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             console.log('_onGanttUpdated');
         },
 
-        _getGanttItemDatabaseModelAndID: function (ganttItem, dataPoint, parentDataPoint, options) {
-            var res = {
-                model: false,
-                id: false,
+        _getGanttItemDialogActionParams: function (ganttItem, dataPoint, parentDataPoint, options) {
+            var params = {
+                res_model: false,
+                res_id: false,
+                view_id: false,
             };
 
             if (ganttItem.isGroup) {
                 var groupedByField = parentDataPoint.groupedBy[0];
                 var field = parentDataPoint.fields[groupedByField];
                 if (field && field.relation) {
-                    res.model = field.relation;
-                    res.id = dataPoint.res_id;
+                    params.res_model = field.relation;
+                    params.res_id = dataPoint.res_id;
                 }
             } else {
-                res.model = dataPoint.model;
-                res.id = dataPoint.data.id;
+                params.res_model = dataPoint.model;
+                params.res_id = dataPoint.data.id;
+                params.view_id = this.formViewId || false;
             }
 
-            return res;
+            return params;
         },
 
         _onGanttEditForm: function (event) {
@@ -205,15 +208,15 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
 
             var dataPoint = self.model.get(item.id);
             var parentDataPoint = self.model.get(item.parentId);
-            var res = self._getGanttItemDatabaseModelAndID(item, dataPoint, parentDataPoint, options);
+            var dialogParams = self._getGanttItemDialogActionParams(item, dataPoint, parentDataPoint, options);
 
-            if (res.model && res.id) {
+            if (dialogParams.res_model && dialogParams.res_id) {
                 self.form_dialog = new dialogs.FormViewDialog(self, {
-                    res_model: res.model,
-                    res_id: res.id,
+                    res_model: dialogParams.res_model,
+                    res_id: dialogParams.res_id,
                     context: context,
                     title: title,
-                    // view_id: Number(this.open_popup_action),
+                    view_id: dialogParams.view_id,
                     on_saved: function (record, isChanged) {
                         self._onFormSaved(record, isChanged);
                     }

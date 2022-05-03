@@ -23,6 +23,22 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
         }),
         init: function (viewInfo, params) {
             this._super.apply(this, arguments);
+            var arch = this.arch;
+            var fields = this.fields;
+            var attrs = arch.attrs;
+
+            // If form_view_id is set, then the gantt view will open a form view
+            // with this id, when it needs to edit or create an item.
+            this.controllerParams.formViewId =
+                attrs.form_view_id ? parseInt(attrs.form_view_id, 10) : false;
+            if (!this.controllerParams.formViewId && params.action) {
+                var formViewDescr = _.find(params.action.views, function (v) {
+                    return v.type === 'form';
+                });
+                if (formViewDescr) {
+                    this.controllerParams.formViewId = formViewDescr.viewID;
+                }
+            }
 
             this.loadParams.type = 'list';
             // `fields` and `modelName` are already set in BasicView
@@ -54,7 +70,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
             // TODO: add these fields to the list of automatically fetched data
             // without having to declare a <field> LOOK AT getFieldNames
             this.loadParams.fieldsMapping = fieldsMapping;
-            
+
             // Save parent model fields to read and map them with internal names
             var parentFieldsMapping = {
                 dateStart: this.arch.attrs.parent_date_start,
