@@ -70,14 +70,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     template: self.renderColumnTitle,
                 },
                 {
-                    name: "actions",
-                    label: "",
-                    width: 25,
-                    renderer: self,
-                    state: state,
-                    template: self.renderColumnActions,
-                },
-                {
                     name: "assign",
                     label: "Assign.",
                     align: "left",
@@ -95,6 +87,14 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     renderer: self,
                     state: state,
                     template: self.renderColumnLimit,
+                },
+                {
+                    name: "actions",
+                    label: "",
+                    width: 25,
+                    renderer: self,
+                    state: state,
+                    template: self.renderColumnActions,
                 },
             ]
             gantt.config.layout = {
@@ -262,7 +262,11 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.setWorkTime({ hours: ["8:30-12:00", "13:30-17:00"] }); //global working hours
 
             gantt.templates.task_class = function (start, end, item) {
-                return item.cssClass;
+                if (item.dateDeadline  && (start > item.dateDeadline || end > item.dateDeadline)) {
+                    return "o_dhx_error";
+                } else {
+                    return item.cssClass;
+                }
             };
 
             gantt.templates.grid_row_class = function (start, end, item) {
@@ -340,13 +344,16 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // Override default `date_grid` template to display the deadline
             // even when not scheduled
             gantt.templates.date_grid = function (date, item, column) {
-                var rendered = gantt.templates.grid_date_format(date, column);
-                if (item && gantt.isUnscheduledTask(item) && gantt.config.show_unscheduled) {
-                    var res = gantt.templates.task_unscheduled_time(item);
-                    if (!res) {
-                        rendered = `<span class="text-muted">${rendered}</span>`;
-                    }
-                };
+                var rendered = "";
+                if (date) {
+                    rendered = gantt.templates.grid_date_format(date, column);
+                    if (item && gantt.isUnscheduledTask(item) && gantt.config.show_unscheduled) {
+                        var res = gantt.templates.task_unscheduled_time(item);
+                        if (!res) {
+                            rendered = `<span class="text-muted">${rendered}</span>`;
+                        }
+                    };
+                }
                 return rendered;
             };
 
