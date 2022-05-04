@@ -931,6 +931,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 parent: parentId, // library mandatory attribute to group items by id
                 type: gantt.config.types.task,
                 parentId: parentId, // copy of the parent attribute
+                columnTitle: "",
                 bar_height: gantt.config.row_height - 2,
             };
 
@@ -972,9 +973,9 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
             // Set main title visible in the left column
             if (rec[mapping.columnTitle].data) {
-                item.columnTitle = rec[mapping.columnTitle].data.display_name || _t("Undefined");
+                item.columnTitle = rec[mapping.columnTitle].data.display_name || item.columnTitle;
             } else {
-                item.columnTitle = rec[mapping.columnTitle] || _t("Undefined");
+                item.columnTitle = rec[mapping.columnTitle] || item.columnTitle;
             }
 
             // Set resource to be displayed in the assign column
