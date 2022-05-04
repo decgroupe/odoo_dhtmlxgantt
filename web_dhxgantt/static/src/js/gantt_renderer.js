@@ -262,7 +262,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.setWorkTime({ hours: ["8:30-12:00", "13:30-17:00"] }); //global working hours
 
             gantt.templates.task_class = function (start, end, item) {
-                if (item.dateDeadline  && (start > item.dateDeadline || end > item.dateDeadline)) {
+                if (item.dateDeadline && (start > item.dateDeadline || end > item.dateDeadline)) {
                     return "o_dhx_error";
                 } else {
                     return item.cssClass;
@@ -273,8 +273,14 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 return item.cssClass;
             };
 
-            gantt.templates.task_row_class = function (start, end, task) {
-                return "";
+            gantt.templates.task_row_class = function (start, end, item) {
+                var res = "";
+                if (self.fieldsMapping.color && self.fieldsViewInfo[self.fieldsMapping.color].relation == "res.users") {
+                    if (item.color && session.uid == item.color) {
+                        res = "o_dhx_gantt_session_color_match";
+                    }
+                }
+                return res;
             };
 
             gantt.templates.task_text = function (start, end, item) {
@@ -886,6 +892,11 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             // Set task color index from parent ID
             if (self.fieldsMapping.cssClass) {
                 var uniqueId = ganttItem.parent;
+                // If the color field mapping is defined, then use it
+                // as a unique identifier to colorize the gantt item
+                if (ganttItem.color) {
+                    uniqueId = ganttItem.color;
+                }
                 var rec = rootState.gantt.dataPoints[ganttItem.id].data;
                 if (!(uniqueId in self.cssClasses)) {
                     var idx = 1 + Object.keys(self.cssClasses).length % CSS_CLASSES_LENGTH;
@@ -997,6 +1008,16 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
 
             if (mapping.progress) {
                 item.progress = rec[mapping.progress] / 100.0;
+            }
+
+            if (mapping.color) {
+                if (rec[mapping.color].res_id) {
+                    item.color = rec[mapping.color].res_id;
+                } else {
+                    item.color = rec[mapping.color];
+                }
+            } else {
+                item.color = false;
             }
 
             return item;

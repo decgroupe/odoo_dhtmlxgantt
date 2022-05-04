@@ -64,6 +64,7 @@ odoo.define('web_dhxgantt.GanttView', function (require) {
                 links: this.arch.attrs.links,
                 parent: this.arch.attrs.parent,
                 columnTitle: this.arch.attrs.column_title,
+                color: this.arch.attrs.color,
                 cssClass: this.arch.attrs.css_class,
                 assignedResource: this.arch.attrs.assigned_resource,
             };

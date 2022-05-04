@@ -72,6 +72,10 @@ $o-dhxgantt-colors: #F06050,
     color: gray !important;
 }
 
+.o_dhx_gantt_session_color_match {
+    background: #eef5ff !important;
+}
+
 @mixin o_dhx_hover() {
 
     &:hover,
