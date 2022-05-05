@@ -30,10 +30,6 @@
 
             <t t-if="!isMobile">
                 <div class="btn-group btn-sm">
-                    <button type="button" class="btn btn-secondary o_dhx_show_all ">
-                        <i class="fa fa-calendar" role="img"/>
-                    Show All
-                    </button>
                     <button type="button" class="btn btn-secondary o_dhx_show_workdays">
                         <i class="fa fa-calendar-o" role="img"/>
                     Workdays

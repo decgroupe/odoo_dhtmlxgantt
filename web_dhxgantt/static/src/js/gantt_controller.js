@@ -75,14 +75,6 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 }
             });
 
-            self.$buttons.on('click', '.o_dhx_show_all', function () {
-                self.renderer.showOnlyWorkdays = false;
-                self.renderer.showOnlyOfficeHours = false;
-                self.renderer._updateIgnoreTime();
-                gantt.render();
-                self._updateButtonState();
-            });
-
             self.$buttons.on('click', '.o_dhx_show_workdays', function () {
                 self.renderer.showOnlyWorkdays = !self.renderer.showOnlyWorkdays;
                 gantt.ext.zoom.setLevel("week");
