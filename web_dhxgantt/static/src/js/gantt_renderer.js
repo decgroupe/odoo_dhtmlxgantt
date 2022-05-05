@@ -38,6 +38,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             self.hoursPerDay = 7;
             self.showOnlyWorkdays = true;
             self.showOnlyOfficeHours = true;
+            self.roundDates = true;
 
             gantt.config.row_height = 24;
             gantt.config.task_height_offset = 0.1;
@@ -57,7 +58,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     name: "columnTitle",
                     label: "Title",
                     tree: true,
-                    width: 285,
                     min_width: 110,
                     renderer: self,
                     state: state,
@@ -75,7 +75,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 {
                     name: "limit",
                     label: "Limit",
-                    align: "center",
+                    align: "left",
                     width: 100,
                     resize: true,
                     renderer: self,
@@ -95,7 +95,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 css: "gantt_container",
                 cols: [
                     {
-                        width: 520,
                         // adding horizontal scrollbar to the grid via 
                         // the scrollX attribute
                         rows: [
@@ -383,6 +382,16 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         start: function () {
             var self = this;
             self.updateGanttState(self.state);
+
+            // Automatically re-render the view after a windows resize
+            var renderGanttTimeout;
+            var renderGantt = self.renderGantt.bind(self);
+            function resize() {
+                clearTimeout(renderGanttTimeout);
+                renderGanttTimeout = setTimeout(renderGantt, 200);
+            }
+            $(window).on('resize', resize);
+
             return this._super.apply(this, arguments);
         },
         _updateIgnoreTime: function (level) {
@@ -438,7 +447,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             }
             // https://docs.dhtmlx.com/gantt/api__gantt_round_dnd_dates_config.html
             // enables rounding the task's start and end dates to the nearest scale marks
-            gantt.config.round_dnd_dates = (level != hour);
+            gantt.config.round_dnd_dates = self.roundDates;
 
             if (level == hour) {
                 gantt.ignore_time = function (date) {
@@ -544,6 +553,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         renderColumnActions: function (item) {
             var rendered = QWeb.render(this.renderer.columnActionTemplate, {
                 item: item, // Gantt data
+                unscheduled: gantt.isUnscheduledTask(item),
                 debug: session.debug,
             });
             return rendered;

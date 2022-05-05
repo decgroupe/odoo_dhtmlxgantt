@@ -17,8 +17,6 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             gantt_attach_events: '_onGanttAttachEvents',
             gantt_edit_form: '_onGanttEditForm',
             gantt_schedule_item: '_onGanttScheduleItem',
-            gantt_show_critical_path: '_onGanttShowCriticalPath',
-            gantt_schedule: '_onGanttSchedule',
             gantt_reload: '_onGanttReload',
             gantt_drag_end: '_onGanttDragEnd',
         }),
@@ -75,6 +73,13 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                     gantt.collapse();
                 }
             });
+            
+            self.$buttons.on('click', '.o_dhx_round_dates', function () {
+                self.renderer.roundDates = !self.renderer.roundDates;
+                self.renderer._updateIgnoreTime();
+                gantt.render();
+                self._updateButtonState();
+            });
 
             self.$buttons.on('click', '.o_dhx_show_workdays', function () {
                 self.renderer.showOnlyWorkdays = !self.renderer.showOnlyWorkdays;
@@ -105,6 +110,9 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             var self = this;
 
             self.$buttons.find('.active').removeClass('active');
+            if (self.renderer.roundDates) {
+                self.$buttons.find('.o_dhx_round_dates').addClass('active');
+            }
             if (self.renderer.showOnlyOfficeHours) {
                 self.$buttons.find('.o_dhx_show_officehours').addClass('active');
             }
@@ -328,6 +336,10 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                     duration: ganttItem.duration,
                 }).then(function () {
                     self.renderer.renderGantt();
+                    gantt.selectTask(ganttItem.id);
+                    gantt.showTask(ganttItem.id);
+                    // gantt.showDate(ganttItem.start_date);
+                    
                 });
             }
         },

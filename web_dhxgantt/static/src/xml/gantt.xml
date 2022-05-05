@@ -30,6 +30,10 @@
 
             <t t-if="!isMobile">
                 <div class="btn-group btn-sm">
+                    <button type="button" class="btn btn-secondary o_dhx_round_dates">
+                        <i class="fa fa-chain" role="img"/>
+                    Snap
+                    </button>
                     <button type="button" class="btn btn-secondary o_dhx_show_workdays">
                         <i class="fa fa-calendar-o" role="img"/>
                     Workdays
@@ -64,11 +68,11 @@
 
     <t t-name="web_dhxgantt.row.limit">
         <span class="o_gantt_row_limit">
-            <t t-if="unscheduled">
-                <i class="gantt_tree_action o_dhx_schedule_item fa fa-plus" t-att-data-id="item.id"></i>
-            </t>
             <t t-if="date">
                 <t t-raw="date"/>
+            </t>
+            <t t-if="unscheduled">
+                <i class="gantt_tree_action o_dhx_schedule_item fa fa-plus" t-att-data-id="item.id"></i>
             </t>
         </span>
     </t>
