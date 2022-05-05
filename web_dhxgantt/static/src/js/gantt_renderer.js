@@ -14,10 +14,12 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         columnTitleTemplate: "web_dhxgantt.row.title",
         columnAssignTemplate: "web_dhxgantt.row.assign",
         columnLimitTemplate: "web_dhxgantt.row.limit",
+        columnActionTemplate: "web_dhxgantt.row.action",
         itemTooltipTemplate: "web_dhxgantt.item.tooltip",
         date_object: new Date(),
         events: _.extend({}, BasicRenderer.prototype.events, {
             'click i.o_dhx_edit_item': '_onClickEditItem',
+            'click i.o_dhx_schedule_item': '_onClickScheduleItem',
         }),
         init: function (parent, state, params) {
             this._super.apply(this, arguments);
@@ -55,7 +57,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     name: "columnTitle",
                     label: "Title",
                     tree: true,
-                    width: 295,
+                    width: 285,
                     min_width: 110,
                     renderer: self,
                     state: state,
@@ -65,7 +67,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     name: "assign",
                     label: "Assign.",
                     align: "left",
-                    width: 120,
+                    width: 110,
                     renderer: self,
                     state: state,
                     template: self.renderColumnAssign,
@@ -74,7 +76,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                     name: "limit",
                     label: "Limit",
                     align: "center",
-                    width: 80,
+                    width: 100,
                     resize: true,
                     renderer: self,
                     state: state,
@@ -472,6 +474,13 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             });
         },
 
+        _onClickScheduleItem: function (ev) {
+            var id = $(ev.currentTarget).data('id');
+            this.trigger_up("gantt_schedule_item", {
+                'id': id,
+            });
+        },
+
         /**
          * Called each time the renderer is attached into the DOM.
          */
@@ -533,10 +542,10 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         },
 
         renderColumnActions: function (item) {
-            var rendered = "";
-            if (!item.isGroup) {
-                rendered = rendered + `<i class="gantt_tree_action o_dhx_edit_item fa fa-pencil" data-id="${item.id}"></i>`;
-            }
+            var rendered = QWeb.render(this.renderer.columnActionTemplate, {
+                item: item, // Gantt data
+                debug: session.debug,
+            });
             return rendered;
         },
 
@@ -568,6 +577,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 var rendered = QWeb.render(this.renderer.columnLimitTemplate, {
                     rec: dataPoint.data, // Record data
                     item: item, // Gantt data
+                    unscheduled: gantt.isUnscheduledTask(item),
                     date: gantt.templates.date_grid(item.dateDeadline, item),
                     debug: session.debug,
                 });

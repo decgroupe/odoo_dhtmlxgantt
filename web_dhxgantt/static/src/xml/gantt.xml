@@ -64,8 +64,19 @@
 
     <t t-name="web_dhxgantt.row.limit">
         <span class="o_gantt_row_limit">
+            <t t-if="unscheduled">
+                <i class="gantt_tree_action o_dhx_schedule_item fa fa-plus" t-att-data-id="item.id"></i>
+            </t>
             <t t-if="date">
                 <t t-raw="date"/>
+            </t>
+        </span>
+    </t>
+
+    <t t-name="web_dhxgantt.row.action">
+        <span class="o_gantt_row_action">
+            <t t-if="!item.isGroup">
+                <i class="gantt_tree_action o_dhx_edit_item fa fa-pencil" t-att-data-id="item.id"></i>
             </t>
         </span>
     </t>

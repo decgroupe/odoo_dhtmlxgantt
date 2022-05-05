@@ -16,6 +16,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             gantt_create_dataprocessor: '_onGanttCreateDataProcessor',
             gantt_attach_events: '_onGanttAttachEvents',
             gantt_edit_form: '_onGanttEditForm',
+            gantt_schedule_item: '_onGanttScheduleItem',
             gantt_show_critical_path: '_onGanttShowCriticalPath',
             gantt_schedule: '_onGanttSchedule',
             gantt_reload: '_onGanttReload',
@@ -83,7 +84,6 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 self._updateButtonState();
             });
 
-
             self.$buttons.on('click', '.o_dhx_show_officehours', function () {
                 self.renderer.showOnlyOfficeHours = !self.renderer.showOnlyOfficeHours;
                 gantt.ext.zoom.setLevel("hour");
@@ -97,7 +97,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             } else {
                 self.$('.o_dhx_buttons').replaceWith(this.$buttons);
             }
-            
+
             self._updateButtonState();
         },
 
@@ -309,6 +309,26 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                     context: this.context,
                 };
                 this.update(params);
+            }
+        },
+
+        _onGanttScheduleItem: function (event) {
+            var self = this;
+            var ganttItem = gantt.getTask(event.data.id);
+            if (ganttItem.unscheduled) {
+                ganttItem.unscheduled = false;
+                var formatFunc = gantt.date.date_to_str("%d-%m-%Y %H:%i");
+                ganttItem.start_date = ganttItem.dateDeadline;
+                ganttItem.end_date = ganttItem.dateDeadline;
+                ganttItem.duration = gantt.calculateDuration(ganttItem);
+                self.model.writeTask({
+                    id: ganttItem.id,
+                    start_date: formatFunc(ganttItem.start_date),
+                    end_date: formatFunc(ganttItem.end_date),
+                    duration: ganttItem.duration,
+                }).then(function () {
+                    self.renderer.renderGantt();
+                });
             }
         },
 
