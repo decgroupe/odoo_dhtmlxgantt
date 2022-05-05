@@ -3,10 +3,12 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
 
     // odoo/addons/web/static/src/js/views/basic/basic_controller.js
     var BasicController = require('web.BasicController');
+    var config = require('web.config');
     var core = require('web.core');
     var dialogs = require('web.view_dialogs');
 
     var _lt = core._lt;
+    var QWeb = core.qweb;
 
     var GanttController = BasicController.extend({
         custom_events: _.extend({}, BasicController.prototype.custom_events, {
@@ -34,6 +36,90 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
         getContext: function () {
             var context = this._super.apply(this, arguments);
             return context;
+        },
+
+        /**
+         * Render the buttons according to the web_dhxgantt.buttons template and
+         * add listeners on it. Set this.$buttons with the produced jQuery element
+         *
+         * @param {jQueryElement} [$node] a jQuery node where the rendered buttons
+         *   should be inserted. $node may be undefined, in which case the Gantt
+         *   inserts them into this.options.$buttons or into a div of its template
+         */
+        renderButtons: function ($node) {
+            var self = this;
+            this.$buttons = $(QWeb.render('web_dhxgantt.buttons', {
+                isMobile: config.device.isMobile,
+            }));
+
+            self.$buttons.on('click', '.o_dhx_zoom_out', function () {
+                gantt.ext.zoom.zoomOut();
+                self.renderer._updateIgnoreTime();
+                gantt.render();
+            });
+
+            self.$buttons.on('click', '.o_dhx_zoom_in', function () {
+                gantt.ext.zoom.zoomIn();
+                self.renderer._updateIgnoreTime();
+                gantt.render();
+            });
+
+            self.$buttons.on('click', '.o_dhx_fullscreen', function () {
+                if (!gantt.getState().fullscreen) {
+                    // expanding the gantt to full screen
+                    gantt.expand();
+                }
+                else {
+                    // collapsing the gantt to the normal mode
+                    gantt.collapse();
+                }
+            });
+
+            self.$buttons.on('click', '.o_dhx_show_all', function () {
+                self.renderer.showOnlyWorkdays = false;
+                self.renderer.showOnlyOfficeHours = false;
+                self.renderer._updateIgnoreTime();
+                gantt.render();
+                self._updateButtonState();
+            });
+
+            self.$buttons.on('click', '.o_dhx_show_workdays', function () {
+                self.renderer.showOnlyWorkdays = !self.renderer.showOnlyWorkdays;
+                gantt.ext.zoom.setLevel("week");
+                self.renderer._updateIgnoreTime();
+                gantt.render();
+                self._updateButtonState();
+            });
+
+
+            self.$buttons.on('click', '.o_dhx_show_officehours', function () {
+                self.renderer.showOnlyOfficeHours = !self.renderer.showOnlyOfficeHours;
+                gantt.ext.zoom.setLevel("hour");
+                self.renderer._updateIgnoreTime();
+                gantt.render();
+                self._updateButtonState();
+            });
+
+            if ($node) {
+                self.$buttons.appendTo($node);
+            } else {
+                self.$('.o_dhx_buttons').replaceWith(this.$buttons);
+            }
+            
+            self._updateButtonState();
+        },
+
+        _updateButtonState: function () {
+            var self = this;
+
+            self.$buttons.find('.active').removeClass('active');
+            if (self.renderer.showOnlyOfficeHours) {
+                self.$buttons.find('.o_dhx_show_officehours').addClass('active');
+            }
+            if (self.renderer.showOnlyWorkdays) {
+                self.$buttons.find('.o_dhx_show_workdays').addClass('active');
+            }
+
         },
 
         /**
@@ -232,43 +318,6 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 };
                 this.update(params);
             }
-        },
-
-        _onGanttShowCriticalPath: function () {
-            event.stopPropagation();
-            var self = this;
-            var def;
-
-            if (self.criticalRendered) {
-                self.criticalRendered = false;
-                self.renderer.undoRenderCriticalTasks();
-                return;
-            }
-            else {
-                self.criticalRendered = true;
-            }
-
-            self._disableAllButtons();
-            def = self.model.getCriticalPath().then(function (result) {
-                self.renderer.renderCriticalTasks(result);
-            });
-            def.always(self._enableAllButtons.bind(self));
-        },
-
-        _disableAllButtons: function () {
-            this.renderer.disableAllButtons();
-        },
-
-        _enableAllButtons: function () {
-            this.renderer.enableAllButtons();
-        },
-
-        _onGanttSchedule: function () {
-            var self = this;
-            self.model.schedule().then(function () {
-                self.update({ reload: true });
-                self.renderer.renderGantt();
-            });
         },
 
         _onGanttReload: function () {

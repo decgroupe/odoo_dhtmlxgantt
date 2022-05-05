@@ -4,57 +4,47 @@
 
     <t t-name="web_dhxgantt.gantt_view">
         <div class="o_dhx_gantt_root">
-            <div class="o_dhx_gantt_header">
-                <div class="o_dhx_gantt_buttons">
-
-                    <div class="btn-group btn-sm">
-                        <button type="button" class="btn btn-secondary o_dhx_critical_path o_dhx_button">Show Critical Path</button>
-                        <button type="button" class="btn btn-secondary o_dhx_reschedule o_dhx_button">Reschedule</button>
-                    </div>
-
-                    <div class="o_dhx_button_right">
-                        <div class="btn-group btn-sm">
-                            <button type="button" class="btn btn-secondary o_dhx_fullscreen">
-                                <i class="fa fa-expand" role="img" aria-label="Full-screen" title="Full-screen"/>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="o_dhx_button_right">
-                        Zoom:
-                        <div class="btn-group btn-sm">
-                            <button type="button" class="btn btn-secondary o_dhx_zoom_out">
-                                <i class="fa fa-search-minus" role="img" aria-label="Zoom Out" title="Zoom Out"/>
-                            </button>
-                            <button type="button" class="btn btn-secondary o_dhx_zoom_in">
-                                <i class="fa fa-search-plus" role="img" aria-label="Zoom In" title="Zoom In"/>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="o_dhx_button_right">
-                        <span class="label">Display:</span>
-                        <div class="btn-group btn-sm">
-                            <button type="button" class="btn btn-secondary o_dhx_show_all ">
-                                <i class="fa fa-calendar" role="img"/>
-                                Show All
-                            </button>
-                            <button type="button" class="btn btn-secondary o_dhx_show_workdays">
-                                <i class="fa fa-calendar-o" role="img"/>
-                                Workdays
-                            </button>
-                            <button type="button" class="btn btn-secondary o_dhx_show_officehours">
-                                <i class="fa fa-clock-o" role="img"/>
-                                Office Hours
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
             <div class="o_dhx_gantt">
                 <!-- Container for gantt rendering -->
             </div>
+        </div>
+    </t>
+
+    <t t-name="web_dhxgantt.buttons">
+        <div class="o_dhx_buttons">
+
+            <div class="btn-group btn-sm">
+                <button type="button" class="btn btn-primary o_dhx_zoom_out">
+                    <i class="fa fa-search-minus" role="img" aria-label="Zoom Out" title="Zoom Out"/>
+                </button>
+                <button type="button" class="btn btn-primary o_dhx_zoom_in">
+                    <i class="fa fa-search-plus" role="img" aria-label="Zoom In" title="Zoom In"/>
+                </button>
+            </div>
+
+            <div class="btn-group btn-sm">
+                <button type="button" class="btn btn-secondary o_dhx_fullscreen">
+                    <i class="fa fa-expand" role="img" aria-label="Full-screen" title="Full-screen"/>
+                </button>
+            </div>
+
+            <t t-if="!isMobile">
+                <div class="btn-group btn-sm">
+                    <button type="button" class="btn btn-secondary o_dhx_show_all ">
+                        <i class="fa fa-calendar" role="img"/>
+                    Show All
+                    </button>
+                    <button type="button" class="btn btn-secondary o_dhx_show_workdays">
+                        <i class="fa fa-calendar-o" role="img"/>
+                    Workdays
+                    </button>
+                    <button type="button" class="btn btn-secondary o_dhx_show_officehours">
+                        <i class="fa fa-clock-o" role="img"/>
+                    Office Hours
+                    </button>
+                </div>
+            </t>
+
         </div>
     </t>
 

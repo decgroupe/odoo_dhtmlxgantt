@@ -17,14 +17,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
         itemTooltipTemplate: "web_dhxgantt.item.tooltip",
         date_object: new Date(),
         events: _.extend({}, BasicRenderer.prototype.events, {
-            'click button.o_dhx_critical_path': '_onClickCriticalPath',
-            'click button.o_dhx_reschedule': '_onClickReschedule',
-            'click button.o_dhx_show_all': '_onClickShowAll',
-            'click button.o_dhx_show_workdays': '_onClickShowWorkdays',
-            'click button.o_dhx_show_officehours': '_onClickShowOfficeHours',
-            'click button.o_dhx_zoom_in': '_onClickZoomIn',
-            'click button.o_dhx_zoom_out': '_onClickZoomOut',
-            'click button.o_dhx_fullscreen': '_onClickFullscreen',
             'click i.o_dhx_edit_item': '_onClickEditItem',
         }),
         init: function (parent, state, params) {
@@ -469,50 +461,6 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             }
 
         },
-        _onClickCriticalPath: function () {
-            this.trigger_up('gantt_show_critical_path');
-        },
-        _onClickReschedule: function () {
-            this.trigger_up('gantt_schedule');
-        },
-        _onClickShowAll: function () {
-            this.showOnlyWorkdays = false;
-            this.showOnlyOfficeHours = false;
-            this._updateIgnoreTime();
-            gantt.render();
-        },
-        _onClickShowWorkdays: function () {
-            this.showOnlyWorkdays = true;
-            gantt.ext.zoom.setLevel("week");
-            this._updateIgnoreTime();
-            gantt.render();
-        },
-        _onClickShowOfficeHours: function () {
-            this.showOnlyOfficeHours = true;
-            gantt.ext.zoom.setLevel("hour");
-            this._updateIgnoreTime();
-            gantt.render();
-        },
-        _onClickZoomIn: function () {
-            gantt.ext.zoom.zoomIn();
-            this._updateIgnoreTime();
-            gantt.render();
-        },
-        _onClickZoomOut: function () {
-            gantt.ext.zoom.zoomOut();
-            this._updateIgnoreTime();
-            gantt.render();
-        },
-        _onClickFullscreen: function () {
-            if (!gantt.getState().fullscreen) {
-                // expanding the gantt to full screen
-                gantt.expand();
-            }
-            else {
-                // collapsing the gantt to the normal mode
-                gantt.collapse();
-            }
-        },
 
         _onClickEditItem: function (ev) {
             var id = $(ev.currentTarget).data('id');
@@ -674,8 +622,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             if (!self.events_set) {
                 gantt.attachEvent('onBeforeGanttRender', function () {
                     var rootHeight = self.$el.height();
-                    var headerHeight = self.$('.o_dhx_gantt_header').height();
-                    self.$('.o_dhx_gantt').height(rootHeight - headerHeight);
+                    self.$('.o_dhx_gantt').height(rootHeight - 5);
                 });
                 gantt.attachEvent('onBeforeLightbox', function (id) {
                     self.trigger_up("gantt_edit_form", {
@@ -764,8 +711,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
                 title: date_to_str(new Date()) // the marker's tooltip
             });
             var rootHeight = this.$el.height();
-            var headerHeight = this.$('.o_dhx_gantt_header').height();
-            this.$('.o_dhx_gantt').height(rootHeight - headerHeight);
+            this.$('.o_dhx_gantt').height(rootHeight - 20);
 
             // Configure `drag_timeline` plugin
             gantt.config.drag_timeline = {
@@ -1034,42 +980,11 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             return date;
         },
 
-        disableAllButtons: function () {
-            this.$('.o_dhx_gantt_header').find('button').prop('disabled', true);
-        },
-        enableAllButtons: function () {
-            this.$('.o_dhx_gantt_header').find('button').prop('disabled', false);
-        },
-        undoRenderCriticalTasks: function (data) {
-            gantt.eachTask(function (item) {
-                item.color = "";
-            });
-            gantt.getLinks().forEach(function (item) {
-                item.color = "";
-            });
-            gantt.render();
-        },
-        renderCriticalTasks: function (data) {
-            data.tasks.forEach(function (item) {
-                var task = gantt.getTask(item);
-                if (task) {
-                    task.color = "red";
-                }
-            });
-            data.links.forEach(function (item) {
-                var link = gantt.getLink(item);
-                if (link) {
-                    link.color = "red";
-                }
-            });
-            if (data.tasks.length > 0) {
-                gantt.render();
-            }
-        },
         destroy: function () {
             gantt.clearAll();
             this._super.apply(this, arguments);
         },
+
     });
     return GanttRenderer;
 });
