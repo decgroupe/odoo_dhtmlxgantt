@@ -223,7 +223,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 if (res) {
                     return self._rpc({
                         model: self.modelName,
-                        method: 'update_gantt_schedule',
+                        method: 'gantt_schedule_update',
                         args: [[res_id], backward],
                         context: self.getContext(),
                     });
@@ -240,6 +240,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 domain: [['id', 'in', ids]],
             }).then(function (records) {
                 records.forEach(function (rec) {
+                    // FIXME: Retrieve gantt item id from database ID and model
                     var task = gantt.getTask(rec.id);
                     if (task) {
                         task.start_date = self.parseDate(rec, self.fieldsMapping.dateStart);
@@ -275,7 +276,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                     gantt.updateLink(res_id, updatedData);
                     return self._rpc({
                         model: self.modelName,
-                        method: 'update_gantt_schedule',
+                        method: 'gantt_schedule_update',
                         args: [parseInt(values.source_id)],
                         context: self.getContext(),
                     });

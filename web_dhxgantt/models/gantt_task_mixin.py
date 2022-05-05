@@ -20,7 +20,7 @@ class GanttTaskMixin(models.AbstractModel):
     )
 
     @api.multi
-    def update_gantt_schedule(self, backward=False):
+    def gantt_schedule_update(self, backward=False):
         return []
 
     @api.multi

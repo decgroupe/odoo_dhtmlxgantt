@@ -79,8 +79,8 @@ class ProjectTask(models.Model):
         return date_planned
 
     @api.multi
-    def update_gantt_schedule(self, backward=False):
-        res = super().update_gantt_schedule(backward)
+    def gantt_schedule_update(self, backward=False):
+        res = super().gantt_schedule_update(backward)
         if not 'gantt_scheduling' in self.env.context:
             for rec in self:
                 bypass_this = False
@@ -91,14 +91,14 @@ class ProjectTask(models.Model):
                     if task_id:
                         bypass_this = True
                         res += task_id.with_context(gantt_scheduling=True)\
-                            ._update_gantt_schedule(from_start=True)
+                            ._gantt_schedule_update(from_start=True)
                 if not bypass_this:
                     res += rec.with_context(gantt_scheduling=True)\
-                        ._update_gantt_schedule(from_start=True)
+                        ._gantt_schedule_update(from_start=True)
         return res
 
     @api.multi
-    def _update_gantt_schedule(self, from_start=False, from_end=False):
+    def _gantt_schedule_update(self, from_start=False, from_end=False):
         self.ensure_one()
         res = [self.id]
         calendar_id = self._get_calendar_id()
@@ -133,16 +133,16 @@ class ProjectTask(models.Model):
             nearest_task_id = task_id._get_nearest_upstream_task() or task_id
             if link_id.type == "0":  # Finish to Start
                 task_id.date_start = nearest_task_id.date_end
-                res += task_id._update_gantt_schedule(from_start=True)
+                res += task_id.gantt_schedule_update(from_start=True)
             if link_id.type == "1":  # Start to Start
                 task_id.date_start = nearest_task_id.date_start
-                res += task_id._update_gantt_schedule(from_start=True)
+                res += task_id.gantt_schedule_update(from_start=True)
             if link_id.type == "2":  # Finish to Finish
                 task_id.date_end = nearest_task_id.date_end
-                res += task_id._update_gantt_schedule(from_end=True)
+                res += task_id.gantt_schedule_update(from_end=True)
             if link_id.type == "3":  # Start to Finish
                 task_id.date_end = nearest_task_id.date_start
-                res += task_id._update_gantt_schedule(from_end=True)
+                res += task_id.gantt_schedule_update(from_end=True)
         return res
 
     def try_snap_start(self, calendar_id):
