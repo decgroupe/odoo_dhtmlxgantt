@@ -54,7 +54,6 @@ class ProjectTaskLink(models.Model):
         ),
     ]
 
-    @api.multi
     @api.depends("source_id.name", "target_id.name", "type")
     def _compute_name(self):
         for rec in self:

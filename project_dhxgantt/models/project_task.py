@@ -48,13 +48,11 @@ class ProjectTask(models.Model):
         help="CSS class used to render this task in gantt view",
     )
 
-    @api.multi
     def _compute_gantt_assigned_resource(self):
         super()._compute_gantt_assigned_resource()
         for rec in self:
             rec.gantt_assigned_resource = rec.user_id.name
 
-    @api.multi
     def write(self, vals):
         res = super().write(vals)
         return res
@@ -68,11 +66,10 @@ class ProjectTask(models.Model):
             return self.user_id.employee_ids[0].resource_calendar_id
         elif self.project_id and self.project_id.resource_calendar_id:
             return self.project_id.resource_calendar_id
-        elif self.env.user.company_id and self.env.user.company_id.resource_calendar_id:
-            return self.env.user.company_id.resource_calendar_id
+        elif self.env.company and self.env.company.resource_calendar_id:
+            return self.env.company.resource_calendar_id
         return False
 
-    @api.multi
     def plan(self, calendar_id, planned_duration, date_ref):
         self.ensure_one()
         if not date_ref:
@@ -85,7 +82,6 @@ class ProjectTask(models.Model):
             )
         return date_planned
 
-    @api.multi
     def gantt_schedule_update(self, backward=False):
         res = super().gantt_schedule_update(backward)
         if not "gantt_scheduling" in self.env.context:
@@ -104,7 +100,6 @@ class ProjectTask(models.Model):
                     )._gantt_schedule_update(from_start=True)
         return res
 
-    @api.multi
     def _gantt_schedule_update(self, from_start=False, from_end=False):
         self.ensure_one()
         res = [self.id]
@@ -185,7 +180,6 @@ class ProjectTask(models.Model):
                     res = task_id
         return res
 
-    @api.multi
     def _get_gantt_class(self):
         self.ensure_one()
         res = super()._get_gantt_class()
@@ -217,7 +211,6 @@ class ProjectTask(models.Model):
                 dependency_tasks |= self.get_dependency_tasks(t, recursive)
         return dependency_tasks
 
-    @api.multi
     def _compute_links(self):
         for r in self:
             links = []
@@ -238,7 +231,6 @@ class ProjectTask(models.Model):
     def add_days(self, target_date, days):
         return target_date + timedelta(days=days)
 
-    @api.multi
     def compute_critical_path(self):
         """In project management, a critical path is the sequence of project
             network activities which add up to the longest overall duration,
@@ -281,7 +273,6 @@ class ProjectTask(models.Model):
         # _logger.info(txt)
         return {"tasks": critical_tasks, "links": critical_links}
 
-    @api.multi
     def bf_traversal_schedule(self):
         projects = self.mapped("project_id")
         if len(projects) > 1:
@@ -325,11 +316,9 @@ class ProjectTask(models.Model):
                         queue.append(child.target_id)
                         # visited.append(child.target_id.id)
 
-    @api.multi
     def set_date_end(self):
         self.date_end = self.date_start + datetime.timedelta(days=self.planned_duration)
 
-    @api.multi
     def schedule(self, visited):
         # _logger.info('Rescheduling task ', self and self.name or 'NONE')
         self.ensure_one()

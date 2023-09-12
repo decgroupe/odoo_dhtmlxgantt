@@ -1,6 +1,6 @@
 {
     "name": "Project Gantt (DHTMLX)",
-    "version": "12.0.1.0.2",
+    "version": "14.0.1.0.0",
     "category": "Project Management",
     "website": "https://github.com/ypapouin/odoo_dhtmlxgantt",
     "license": "GPL-3",
