@@ -73,7 +73,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                     gantt.collapse();
                 }
             });
-            
+
             self.$buttons.on('click', '.o_dhx_round_dates', function () {
                 self.renderer.roundDates = !self.renderer.roundDates;
                 self.renderer._updateIgnoreTime();
@@ -339,7 +339,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                     gantt.selectTask(ganttItem.id);
                     gantt.showTask(ganttItem.id);
                     // gantt.showDate(ganttItem.start_date);
-                    
+
                 });
             }
         },

@@ -1,33 +1,7 @@
-$o-dhxgantt-colors: #F06050,
-#F4A460,
-#F7CD1F,
-#6CC1ED,
-#814968,
-#EB7E7F,
-#2C8397,
-#475577,
-#D6145F,
-#30C381,
-#9365B8,
-#aa4b6b,
-#30C381,
-#97743a,
-#F7CD1F,
-#4285F4,
-#8E24AA,
-#D6145F,
-#173e43,
-#348F50,
-#AA3A38,
-#795548,
-#5e0231,
-#6be585,
-#999966,
-#e9d362,
-#b56969,
-#bdc3c7,
-#649173 !default;
-
+$o-dhxgantt-colors: #f06050, #f4a460, #f7cd1f, #6cc1ed, #814968, #eb7e7f, #2c8397,
+    #475577, #d6145f, #30c381, #9365b8, #aa4b6b, #30c381, #97743a, #f7cd1f, #4285f4,
+    #8e24aa, #d6145f, #173e43, #348f50, #aa3a38, #795548, #5e0231, #6be585, #999966,
+    #e9d362, #b56969, #bdc3c7, #649173 !default;
 
 .o_dhx_gantt_root {
     /* width: 100%; */
@@ -39,7 +13,8 @@ $o-dhxgantt-colors: #F06050,
     height: 100%;
 }
 
-.o_dhx_gantt.gantt_container {}
+.o_dhx_gantt.gantt_container {
+}
 
 .o_dhx_gantt_header {
     background-color: white;
@@ -77,7 +52,6 @@ $o-dhxgantt-colors: #F06050,
 }
 
 @mixin o_dhx_hover() {
-
     &:hover,
     &:focus,
     &.ui-draggable-dragging,
@@ -116,17 +90,24 @@ $o-dhxgantt-colors: #F06050,
 
 @mixin o_dhx_background_decorations($color) {
     $color-subdle: mix($color, white, 60%);
-    background-image: repeating-linear-gradient(-45deg, $color-subdle 0 10px, lighten($color-subdle, 6%) 10px 20px);
+    background-image: repeating-linear-gradient(
+        -45deg,
+        $color-subdle 0 10px,
+        lighten($color-subdle, 6%) 10px 20px
+    );
 }
 
 @mixin o_dhx_background_decorations_hover($color) {
     @include o_dhx_hover() {
-        background-image: repeating-linear-gradient(-45deg, $color 0 10px, lighten($color, 6%) 10px 20px);
+        background-image: repeating-linear-gradient(
+            -45deg,
+            $color 0 10px,
+            lighten($color, 6%) 10px 20px
+        );
     }
 }
 
 @for $index from 1 through length($o-dhxgantt-colors) - 1 {
-
     .gantt_task_line {
         &.o_dhx_gantt_color_#{$index} {
             $gantt-color: nth($o-dhxgantt-colors, $index);
@@ -165,5 +146,4 @@ $o-dhxgantt-colors: #F06050,
             }
         }
     }
-
 }

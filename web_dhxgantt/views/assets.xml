@@ -1,18 +1,53 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <odoo>
 
-    <template id="assets_backend" name="web_dhxgantt assets" inherit_id="web.assets_backend">
+    <template
+        id="assets_backend"
+        name="web_dhxgantt assets"
+        inherit_id="web.assets_backend"
+    >
         <xpath expr="//script[last()]" position="after">
-            <script type="text/javascript" src="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/sources/dhtmlxgantt.js"></script>
-            <link rel="stylesheet" type="text/css" href="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/sources/dhtmlxgantt.css"/>
-            <link rel="stylesheet" type="text/scss" href="/web_dhxgantt/static/src/scss/secondary_variables.scss"/>
-            <link rel="stylesheet" type="text/scss" href="/web_dhxgantt/static/src/scss/dhtmlxgantt_skin.scss"/>
-            <link rel="stylesheet" type="text/scss" href="/web_dhxgantt/static/src/scss/gantt.scss"/>
+            <script
+                type="text/javascript"
+                src="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/sources/dhtmlxgantt.js"
+            />
+            <link
+                rel="stylesheet"
+                type="text/css"
+                href="/web_dhxgantt/static/lib/dhtmlxgantt/codebase/sources/dhtmlxgantt.css"
+            />
+            <link
+                rel="stylesheet"
+                type="text/scss"
+                href="/web_dhxgantt/static/src/scss/secondary_variables.scss"
+            />
+            <link
+                rel="stylesheet"
+                type="text/scss"
+                href="/web_dhxgantt/static/src/scss/dhtmlxgantt_skin.scss"
+            />
+            <link
+                rel="stylesheet"
+                type="text/scss"
+                href="/web_dhxgantt/static/src/scss/gantt.scss"
+            />
 
-            <script type="text/javascript" src="/web_dhxgantt/static/src/js/gantt_model.js"></script>
-            <script type="text/javascript" src="/web_dhxgantt/static/src/js/gantt_renderer.js"></script>
-            <script type="text/javascript" src="/web_dhxgantt/static/src/js/gantt_controller.js"></script>
-            <script type="text/javascript" src="/web_dhxgantt/static/src/js/gantt_view.js"></script>
+            <script
+                type="text/javascript"
+                src="/web_dhxgantt/static/src/js/gantt_model.js"
+            />
+            <script
+                type="text/javascript"
+                src="/web_dhxgantt/static/src/js/gantt_renderer.js"
+            />
+            <script
+                type="text/javascript"
+                src="/web_dhxgantt/static/src/js/gantt_controller.js"
+            />
+            <script
+                type="text/javascript"
+                src="/web_dhxgantt/static/src/js/gantt_view.js"
+            />
         </xpath>
     </template>
 

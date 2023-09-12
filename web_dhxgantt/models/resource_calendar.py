@@ -1,18 +1,16 @@
-from odoo import models, fields
-from datetime import datetime, timedelta
+# Copyright (C) DEC SARL, Inc - All Rights Reserved.
+# Written by Yann Papouin <ypa at decgroupe.com>, Mar 2022
+
+from datetime import timedelta
 from pytz import timezone, utc
+from odoo import models
 
 
 class ResourceCalendar(models.Model):
-    _inherit = 'resource.calendar'
+    _inherit = "resource.calendar"
 
     def plan_minutes(
-        self,
-        minutes,
-        day_dt,
-        compute_leaves=False,
-        domain=None,
-        resource=None
+        self, minutes, day_dt, compute_leaves=False, domain=None, resource=None
     ):
         hours = minutes / 60
         return self.plan_hours(hours, day_dt, compute_leaves, domain, resource)
@@ -29,8 +27,7 @@ class ResourceCalendar(models.Model):
         if not dt.tzinfo:
             dt = dt.replace(tzinfo=utc)
         day_end = dt.astimezone(timezone(self.tz))
-        day_end = day_end.replace(hour=23, minute=59,
-                                  second=59) + timedelta(seconds=1)
+        day_end = day_end.replace(hour=23, minute=59, second=59) + timedelta(seconds=1)
         intervals = self._work_intervals(dt, day_end.astimezone(utc))
         return len(intervals) == 0
 
@@ -45,6 +42,7 @@ class ResourceCalendar(models.Model):
         tz = timezone(self.tz)
         if not dt.tzinfo:
             dt = dt.replace(tzinfo=utc)
-        dt = dt.astimezone(tz).replace(hour=23, minute=59,
-                                       second=59) + timedelta(seconds=1)
+        dt = dt.astimezone(tz).replace(hour=23, minute=59, second=59) + timedelta(
+            seconds=1
+        )
         return dt.astimezone(utc).replace(tzinfo=None)

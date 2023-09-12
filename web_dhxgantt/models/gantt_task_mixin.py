@@ -2,12 +2,12 @@
 # Copyright (C) DEC SARL, Inc - All Rights Reserved.
 # Written by Yann Papouin <ypa at decgroupe.com>, Mar 2022
 
-from odoo import models, api, fields
+from odoo import api, fields, models
 
 
 class GanttTaskMixin(models.AbstractModel):
-    _name = 'gantt.task.mixin'
-    _description = 'Gantt Task Mixin'
+    _name = "gantt.task.mixin"
+    _description = "Gantt Task Mixin"
 
     gantt_class = fields.Char(
         compute="_compute_gantt_class",
