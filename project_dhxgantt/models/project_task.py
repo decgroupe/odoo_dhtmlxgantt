@@ -1,43 +1,47 @@
+# Copyright (C) DEC SARL, Inc - All Rights Reserved.
+# Written by Yann Papouin <ypa at decgroupe.com>, Mar 2022
+
 import datetime
 import json
 import logging
-
 from datetime import timedelta
 
-from odoo import models, fields, api
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
 
 
 class ProjectTask(models.Model):
-    _inherit = ['project.task', 'gantt.task.mixin']
-    _name = 'project.task'
+    _inherit = ["project.task", "gantt.task.mixin"]
+    _name = "project.task"
 
     planned_duration = fields.Integer(
-        'Duration',
+        string="Duration",
         default=420,
     )
-    lag_time = fields.Integer('Lag Time')
+    lag_time = fields.Integer(
+        string="Lag Time",
+    )
     downstream_task_ids = fields.One2many(
-        comodel_name='project.task.link',
-        inverse_name='source_id',
-        help='Tasks that depend on this task.',
+        comodel_name="project.task.link",
+        inverse_name="source_id",
+        help="Tasks that depend on this task.",
     )
     upstream_task_ids = fields.One2many(
-        comodel_name='project.task.link',
-        inverse_name='target_id',
+        comodel_name="project.task.link",
+        inverse_name="target_id",
         help="Tasks on which this task depends.",
     )
     recursive_upstream_task_ids = fields.Many2many(
-        string='Recursive Dependencies',
-        comodel_name='project.task',
-        compute='_compute_recursive_upstream_task_ids'
+        string="Recursive Dependencies",
+        comodel_name="project.task",
+        compute="_compute_recursive_upstream_task_ids",
     )
     links = fields.Char(
-        string='Links',
+        string="Links",
         compute="_compute_links",
-        help="Links serialized as JSON"
+        help="Links serialized as JSON",
     )
     gantt_class = fields.Char(
         compute="_compute_gantt_class",
@@ -56,8 +60,11 @@ class ProjectTask(models.Model):
         return res
 
     def _get_calendar_id(self):
-        if self.user_id and self.user_id.employee_ids and self.user_id.employee_ids[
-            0].resource_calendar_id:
+        if (
+            self.user_id
+            and self.user_id.employee_ids
+            and self.user_id.employee_ids[0].resource_calendar_id
+        ):
             return self.user_id.employee_ids[0].resource_calendar_id
         elif self.project_id and self.project_id.resource_calendar_id:
             return self.project_id.resource_calendar_id
@@ -69,32 +76,32 @@ class ProjectTask(models.Model):
     def plan(self, calendar_id, planned_duration, date_ref):
         self.ensure_one()
         if not date_ref:
-            raise Exception('Missing reference date')
+            raise Exception("Missing reference date")
         date_planned = calendar_id.plan_minutes(planned_duration, date_ref)
         if not date_planned:
             raise Exception(
-                'Invalid resulting date when planning from {} with '
-                'a duration of {}'.format(date_ref, planned_duration)
+                "Invalid resulting date when planning from {} with "
+                "a duration of {}".format(date_ref, planned_duration)
             )
         return date_planned
 
     @api.multi
     def gantt_schedule_update(self, backward=False):
         res = super().gantt_schedule_update(backward)
-        if not 'gantt_scheduling' in self.env.context:
+        if not "gantt_scheduling" in self.env.context:
             for rec in self:
                 bypass_this = False
                 if backward:
-                    task_id = rec._get_nearest_upstream_task(
-                        link_type=["0", "2"]
-                    )
+                    task_id = rec._get_nearest_upstream_task(link_type=["0", "2"])
                     if task_id:
                         bypass_this = True
-                        res += task_id.with_context(gantt_scheduling=True)\
-                            ._gantt_schedule_update(from_start=True)
+                        res += task_id.with_context(
+                            gantt_scheduling=True
+                        )._gantt_schedule_update(from_start=True)
                 if not bypass_this:
-                    res += rec.with_context(gantt_scheduling=True)\
-                        ._gantt_schedule_update(from_start=True)
+                    res += rec.with_context(
+                        gantt_scheduling=True
+                    )._gantt_schedule_update(from_start=True)
         return res
 
     @api.multi
@@ -122,7 +129,7 @@ class ProjectTask(models.Model):
 
         # Debug updated data
         _logger.info(
-            '[{}] >> start={} end={} using CALENDAR {}'.format(
+            "[{}] >> start={} end={} using CALENDAR {}".format(
                 self.name, self.date_start, self.date_end, calendar_id.name
             )
         )
@@ -148,20 +155,20 @@ class ProjectTask(models.Model):
     def try_snap_start(self, calendar_id):
         """Snap to day limits when gantt view is day, week, month, etc.
         Args:
-            calendar_id ([resource.calendar]): Calendar used to compute 
+            calendar_id ([resource.calendar]): Calendar used to compute
             working days
         """
-        snap = self.env.context.get('gantt_duration_unit') == 'day'
+        snap = self.env.context.get("gantt_duration_unit") == "day"
         if snap and calendar_id.is_before_worktime(self.date_start):
             self.date_start = calendar_id.snap_to_day_start(self.date_start)
 
     def try_snap_end(self, calendar_id):
         """Snap to day limits when gantt view is day, week, month, etc.
         Args:
-            calendar_id ([resource.calendar]): Calendar used to compute 
+            calendar_id ([resource.calendar]): Calendar used to compute
             working days
         """
-        snap = self.env.context.get('gantt_duration_unit') == 'day'
+        snap = self.env.context.get("gantt_duration_unit") == "day"
         if snap and calendar_id.is_after_worktime(self.date_end):
             self.date_end = calendar_id.snap_to_day_end(self.date_end)
 
@@ -183,18 +190,16 @@ class ProjectTask(models.Model):
         self.ensure_one()
         res = super()._get_gantt_class()
         if self.stage_id and self.stage_id.gantt_class:
-            css_name = self.stage_id.gantt_class.replace(' ', '_').lower()
+            css_name = self.stage_id.gantt_class.replace(" ", "_").lower()
             if css_name:
-                res += ' o_dhx_gantt_task_stage_{}'.format(
-                    css_name
-                )
+                res += " o_dhx_gantt_task_stage_{}".format(css_name)
         return res
 
-    @api.depends('stage_id.gantt_class')
+    @api.depends("stage_id.gantt_class")
     def _compute_gantt_class(self):
         super()._compute_gantt_class()
 
-    @api.depends('upstream_task_ids')
+    @api.depends("upstream_task_ids")
     def _compute_recursive_upstream_task_ids(self):
         for rec in self:
             rec.recursive_upstream_task_ids = rec.get_dependency_tasks(
@@ -218,11 +223,11 @@ class ProjectTask(models.Model):
             links = []
             for link in r.upstream_task_ids:
                 json_obj = {
-                    'id': link.id,
-                    'databaseId': link.id,
-                    'source': link.source_id.id,
-                    'target': link.target_id.id,
-                    'type': link.type
+                    "id": link.id,
+                    "databaseId": link.id,
+                    "source": link.source_id.id,
+                    "target": link.target_id.id,
+                    "type": link.type,
                 }
                 links.append(json_obj)
             r.links = json.dumps(links)
@@ -235,7 +240,7 @@ class ProjectTask(models.Model):
 
     @api.multi
     def compute_critical_path(self):
-        """ In project management, a critical path is the sequence of project
+        """In project management, a critical path is the sequence of project
             network activities which add up to the longest overall duration,
             regardless if that longest duration has float or not.
             This determines the shortest time possible to complete the project.
@@ -270,24 +275,22 @@ class ProjectTask(models.Model):
                 current_task = False
 
         # _logger.info('critical_path')
-        txt = ''
+        txt = ""
         for path in critical_path:
-            txt += str(path.date_start) + ' >> '
+            txt += str(path.date_start) + " >> "
         # _logger.info(txt)
-        return {'tasks': critical_tasks, 'links': critical_links}
+        return {"tasks": critical_tasks, "links": critical_links}
 
     @api.multi
     def bf_traversal_schedule(self):
-        projects = self.mapped('project_id')
+        projects = self.mapped("project_id")
         if len(projects) > 1:
             raise UserError(
                 "Can't auto schedule more than one project in the same time."
             )
 
         # not using project.task_ids because it has a default domain
-        tasks = self.env['project.task'].search(
-            [('project_id', '=', projects.id)]
-        )
+        tasks = self.env["project.task"].search([("project_id", "=", projects.id)])
         leading_tasks = tasks.filtered(lambda t: not t.upstream_task_ids)
 
         # Mark all the vertices as not visited
@@ -324,9 +327,7 @@ class ProjectTask(models.Model):
 
     @api.multi
     def set_date_end(self):
-        self.date_end = self.date_start + datetime.timedelta(
-            days=self.planned_duration
-        )
+        self.date_end = self.date_start + datetime.timedelta(days=self.planned_duration)
 
     @api.multi
     def schedule(self, visited):
@@ -371,9 +372,7 @@ class ProjectTask(models.Model):
                         # _logger.info('setting date_start to {0}'.format(self.date_start))
             elif parent.type == "1":  # Start to Start
                 if date_start:
-                    todo_date_start = date_start + datetime.timedelta(
-                        self.lag_time
-                    )
+                    todo_date_start = date_start + datetime.timedelta(self.lag_time)
                     # _logger.info('todo_date_start = {0}'.format(todo_date_start))
                     if self.id in visited:
                         self.date_start = max(todo_date_start, self.date_start)

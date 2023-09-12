@@ -7,11 +7,13 @@
 .o_dhx_gantt_task_stage_specification,
 .o_dhx_gantt_task_stage_draft,
 .o_dhx_gantt_task_stage_todo {
-    background: repeating-linear-gradient(45deg,
-            #de8736,
-            #de8736 10px,
-            #dd7b1f 10px,
-            #dd7b1f 20px);
+    background: repeating-linear-gradient(
+        45deg,
+        #de8736,
+        #de8736 10px,
+        #dd7b1f 10px,
+        #dd7b1f 20px
+    );
 }
 
 .o_dhx_gantt_task_stage_design,
@@ -22,11 +24,13 @@
 
 .o_dhx_gantt_task_stage_testing,
 .o_dhx_gantt_task_stage_merge {
-    background: repeating-linear-gradient(45deg,
-            #368dde,
-            #368dde 10px,
-            #1174d1 10px,
-            #1174d1 20px);
+    background: repeating-linear-gradient(
+        45deg,
+        #368dde,
+        #368dde 10px,
+        #1174d1 10px,
+        #1174d1 20px
+    );
 }
 
 .o_dhx_gantt_task_stage_deployment,

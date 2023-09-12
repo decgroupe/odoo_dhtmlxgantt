@@ -32,7 +32,7 @@
     <record id="view_task_gantt_data_form" model="ir.ui.view">
         <field name="name">project.task.gantt.data.form</field>
         <field name="model">project.task</field>
-        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="inherit_id" ref="project.view_task_form2" />
         <field name="arch" type="xml">
             <xpath expr="//field[@name='user_id']" position="after">
                 <!-- <field name="planned_duration"/> -->
@@ -41,24 +41,30 @@
             <xpath expr="//page[@name='description_page']" position="after">
                 <page string="Dependencies">
                     <group string="Gantt Info">
-                        <field name="date_start"/>
-                        <field name="date_end"/>
-                        <field name="planned_duration"/>
+                        <field name="date_start" />
+                        <field name="date_end" />
+                        <field name="planned_duration" />
                     </group>
-                    <separator string="Predecessors"/>
+                    <separator string="Predecessors" />
                     <field name="upstream_task_ids">
                         <tree editable="bottom">
-                            <field name="project_id" invisible="1"/>
-                            <field name="source_id" domain="[('project_id', '=', project_id)]"/>
-                            <field name="type"/>
+                            <field name="project_id" invisible="1" />
+                            <field
+                                name="source_id"
+                                domain="[('project_id', '=', project_id)]"
+                            />
+                            <field name="type" />
                         </tree>
                     </field>
-                    <separator string="Successors"/>
+                    <separator string="Successors" />
                     <field name="downstream_task_ids">
                         <tree editable="bottom">
-                            <field name="project_id" invisible="1"/>
-                            <field name="target_id" domain="[('project_id', '=', project_id)]"/>
-                            <field name="type"/>
+                            <field name="project_id" invisible="1" />
+                            <field
+                                name="target_id"
+                                domain="[('project_id', '=', project_id)]"
+                            />
+                            <field name="type" />
                         </tree>
                     </field>
                 </page>
@@ -68,15 +74,24 @@
 
     <!-- All Task action with gantt view -->
     <record id="project.action_view_task" model="ir.actions.act_window">
-        <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity,dhxgantt</field>
+        <field
+            name="view_mode"
+        >kanban,tree,form,calendar,pivot,graph,activity,dhxgantt</field>
     </record>
 
-    <record id="project.act_project_project_2_project_task_all" model="ir.actions.act_window">
-        <field name="view_mode">kanban,tree,form,calendar,pivot,graph,activity,dhxgantt</field>
+    <record
+        id="project.act_project_project_2_project_task_all"
+        model="ir.actions.act_window"
+    >
+        <field
+            name="view_mode"
+        >kanban,tree,form,calendar,pivot,graph,activity,dhxgantt</field>
     </record>
 
     <record id="project.project_task_action_sub_task" model="ir.actions.act_window">
-        <field name="view_mode">kanban,tree,form,calendar,timeline,pivot,graph,activity,dhxgantt</field>
+        <field
+            name="view_mode"
+        >kanban,tree,form,calendar,timeline,pivot,graph,activity,dhxgantt</field>
     </record>
 
 
