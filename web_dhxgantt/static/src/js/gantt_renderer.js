@@ -7,6 +7,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
     var core = require('web.core');
     var QWeb = core.qweb;
     var _lt = core._lt;
+    var _t = core._t;
 
     var GanttRenderer = BasicRenderer.extend({
         template: "web_dhxgantt.gantt_view",
@@ -49,6 +50,7 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             gantt.config.drag_project = true;
             gantt.config.show_links = true;
             gantt.config.drag_links = false;
+            gantt.config.date_format = "%Y-%m-%d %H:%i:%s";
 
             // https://docs.dhtmlx.com/gantt/desktop__specifying_columns.html
             // Note that `resize` with `config.grid_resize` is a PRO edition
@@ -760,9 +762,12 @@ odoo.define('web_dhxgantt.GanttRenderer', function (require) {
             }
 
             // Set locale (lang) from current user settings
-            var context = this.getSession().user_context;
-            var locale = context.lang.substring(0, 2) || 'en_US';
-            gantt.i18n.setLocale(locale);
+            var session = self.getSession();
+            if (session) {
+                var context = this.getSession().user_context;
+                var locale = context.lang.substring(0, 2) || 'en_US';
+                gantt.i18n.setLocale(locale);
+            }
 
             gantt.init(gantt_container);
 

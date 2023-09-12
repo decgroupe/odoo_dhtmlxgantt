@@ -141,12 +141,11 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
          *
          * @returns {Deferred}
          */
-        update: function (params, options) {
+        update: async function (params, options) {
             var self = this;
             // self._updateButtons();
             // TODO: Recreate gantt Data
-            var parentUpdateResult = self._super.apply(self, arguments);
-            return parentUpdateResult;
+            await self._super.apply(self, arguments);
         },
 
         /**
@@ -325,7 +324,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
             var ganttItem = gantt.getTask(event.data.id);
             if (ganttItem.unscheduled) {
                 ganttItem.unscheduled = false;
-                var formatFunc = gantt.date.date_to_str("%d-%m-%Y %H:%i");
+                var formatFunc = gantt.date.date_to_str(gantt.config.date_format);
                 ganttItem.start_date = ganttItem.dateDeadline;
                 ganttItem.end_date = ganttItem.dateDeadline;
                 ganttItem.duration = gantt.calculateDuration(ganttItem);
@@ -361,7 +360,7 @@ odoo.define('web_dhxgantt.GanttController', function (require) {
                 var task = event.data.tasksInRow[0];
                 if (task.unscheduled) {
                     task.unscheduled = false;
-                    var formatFunc = gantt.date.date_to_str("%d-%m-%Y %H:%i");
+                    var formatFunc = gantt.date.date_to_str(gantt.config.date_format);
                     task.start_date = event.data.startDate;
                     task.end_date = event.data.endDate;
                     task.start_date = gantt.roundDate(task.start_date);

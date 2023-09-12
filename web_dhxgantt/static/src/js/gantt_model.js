@@ -4,13 +4,14 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
     // odoo/addons/web/static/src/js/views/basic/basic_model.js
     var BasicModel = require('web.BasicModel');
     var core = require('web.core');
+    var field_utils = require('web.field_utils');
 
     var _lt = core._lt;
     var _t = core._t;
 
     var GanttModel = BasicModel.extend({
 
-        get: function (id, options) {
+        __get: function (id, options) {
             var res = this._super.apply(this, arguments);
             // Get is called by AbstractController.update() and the result
             // is stored in its `state` variable
@@ -26,6 +27,9 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             return res;
         },
 
+        /**
+         * @override
+         */
         load: function (params) {
             var self = this;
 
@@ -45,6 +49,7 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
         },
 
         /**
+         * @override
          * Reload all data for a given resource. At any time there is at most one
          * reload operation active.
          * Note that the `params` argument is sometimes called `options`
@@ -123,13 +128,12 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
 
         _load: function (dataPoint, options) {
             var self = this;
+            // Keep a copy of the original result values
             var _loadBasic = self._super.apply(self, arguments);
             return _loadBasic.then(function () {
-                // Keep a copy of the original result values
-                var _loadBasicResult = arguments;
                 return self._loadExtraData(dataPoint).then(function () {
-                    // Return original result values 
-                    return _loadBasicResult;
+                    // Return original result values (we also could return dataPoint)
+                    return _loadBasic;
                 });
             });
         },
@@ -175,10 +179,10 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
                 return $.when();
             }
             var values = {};
-            if ('text' in data) {
+            if ('text' in data && self.fieldsMapping.text != undefined) {
                 values[self.fieldsMapping.text] = data.text;
             }
-            if ('progress' in data) {
+            if ('progress' in data && self.fieldsMapping.progress != undefined) {
                 values[self.fieldsMapping.progress] = data.progress;
             }
 
@@ -193,14 +197,17 @@ odoo.define('web_dhxgantt.GanttModel', function (require) {
             }
 
             var backward = false;
-            var formatFunc = gantt.date.str_to_date("%d-%m-%Y %H:%i");
+            var formatFunc = gantt.date.str_to_date(gantt.config.date_format);
+
             if ('start_date' in data) {
                 var date_start = formatFunc(data.start_date);
-                values[self.fieldsMapping.dateStart] = JSON.stringify(date_start);
+                values[self.fieldsMapping.dateStart] = field_utils.parse.datetime(
+                    data.start_date, {}, { timezone: false }).toJSON()
             }
             if ('end_date' in data) {
                 var date_stop = formatFunc(data.end_date);
-                values[self.fieldsMapping.dateStop] = JSON.stringify(date_stop);
+                values[self.fieldsMapping.dateStop] = field_utils.parse.datetime(
+                    data.end_date, {}, { timezone: false }).toJSON()
             }
 
             if ('previous_start_date' in data) {
